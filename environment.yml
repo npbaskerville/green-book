@@ -1,0 +1,14 @@
+# conda virtual environment for Green book
+name: green-book
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.12.*
+  - pip
+  - conda-lock
+  - pandas
+platforms:
+  - osx-64
+  - osx-arm64
+  - linux-64
