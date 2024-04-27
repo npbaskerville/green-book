@@ -1,0 +1,54 @@
+repos:
+- repo: https://github.com/pre-commit/pre-commit-hooks.git
+  rev: v4.1.0
+  hooks:
+  - id: trailing-whitespace
+  - id: check-added-large-files
+  - id: check-ast
+  - id: check-json
+    exclude: data/stats
+  - id: check-merge-conflict
+  - id: check-xml
+  - id: check-yaml
+    args: [--allow-multiple-documents, --unsafe]
+  - id: end-of-file-fixer
+  - id: no-commit-to-branch
+  - id: mixed-line-ending
+
+- repo: https://github.com/pre-commit/mirrors-isort
+  rev: v5.10.1
+  hooks:
+  - id: isort
+
+- repo: https://github.com/ambv/black
+  rev: 22.3.0
+  hooks:
+  - id: black
+
+- repo: https://github.com/pycqa/flake8
+  rev: 3.9.2
+  hooks:
+  - id: flake8
+
+- repo: https://github.com/astral-sh/ruff-pre-commit
+  # Ruff version.
+  rev: v0.4.2
+  hooks:
+    # Run the linter.
+    - id: ruff
+      args: [ --fix ]
+    # Run the formatter.
+    - id: ruff-format
+
+- repo: https://github.com/pre-commit/mirrors-mypy
+  rev: v0.942 # Not really used; due to the 'language: system' below, the mypy installed in the venv will be used.
+  hooks:
+  -   id: mypy
+      args: [--install-types, --non-interactive]
+      # Prevent invoking this hook on any non-python file.
+      files: 'src/sibylla/.+\.py'
+      # By default pre-commit runs mypy (or any hook) in an isolated venv without our dependencies.
+      # This is bad (for mypy), because type checking also needs to know about types in the dependencies.
+      # This setting causes pre-commit to run the mypy from the current environment (our pipenv venv)
+      # instead of the one it installs.
+      language: system
