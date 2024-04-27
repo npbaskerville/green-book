@@ -8,6 +8,7 @@ dependencies:
   - pip
   - conda-lock
   - pandas
+  - pre-commit
 platforms:
   - osx-64
   - osx-arm64
