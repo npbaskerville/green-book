@@ -47,3 +47,7 @@ class Registrar:
             )
         with open(self._ledger_loc, "w") as f:
             yaml.dump(self._contestants, f)
+
+    @property
+    def contestants(self) -> List[Contestant]:
+        return self._contestants
