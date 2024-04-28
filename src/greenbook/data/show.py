@@ -1,14 +1,12 @@
-from dataclasses import dataclass
-from typing import Sequence
-
 from attr import attrib
+from typing import Optional, Sequence
+from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
 
+from src.greenbook.data.consts import MAX_ENTRIES_PER_CONTESTANT
 from src.greenbook.data.entries import Contestant
 
 yaml = YAML()
-
-MAX_ENTRIE_PER_CONTESTANT = 2
 
 
 @yaml_object(YAML)
@@ -17,11 +15,14 @@ class ShowClass:
     number: int = attrib(type=int)
     name: str = attrib(type=str)
     contestants: Sequence[Contestant] = attrib(type=Sequence[Contestant])
+    first_place: Optional[Contestant] = attrib(type=Contestant, default=None)
+    second_place: Optional[Contestant] = attrib(type=Contestant, default=None)
+    third_place: Optional[Contestant] = attrib(type=Contestant, default=None)
+    commendations: Sequence[Contestant] = attrib(type=Sequence[Contestant], default=())
 
     def __post_init__(self):
         assert all(
-            self.count_contestant(c) <= MAX_ENTRIE_PER_CONTESTANT
-            for c in self.unique_contestants
+            self.count_contestant(c) <= MAX_ENTRIES_PER_CONTESTANT for c in self.unique_contestants
         )
 
     def __contains__(self, contestant: Contestant) -> bool:

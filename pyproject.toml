@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+# Options optimized for running pytest locally on a dev machine.
+addopts = [
+    # Show names of all tests and parametrizations
+    "--verbose",
+    # Calculate code coverage with coverage.py
+    # off by default because it makes local runs much slower.
+    # We enable coverage on CI.
+    # "--cov",
+    # Define where coverage reports go (we enable coverage on CI).
+    "--cov-report=xml:tests/out/reports/cov.xml",
+    "--cov-report=html:tests/out/reports/cov-html",
+    # Write test results to xml
+    "--junitxml=tests/out/reports/junit.xml",
+    # Use multiprocessing for speed.
+    "--numprocesses=auto",
+    # Benchmark-disable means that tests with benchmarks will be run as regular tests,
+    # without benchmarking (but with asserts or course).
+    # Benchmarking is disabled anyway when using multi-process runs, this just supresses
+    # a warning. Benchmarking can be enabled again via CLI with --enable-benchmark,
+    # e.g. when writing a new benchmark test. In CI we enable this.
+    "--benchmark-disable",
+    # Show durations of slowest tests.
+    "--durations=50",
+    # Shorter tracebacks (by default pytest includes code snippets)
+    "--tb=short",
+    # Force colored output even on CI
+    "--color=yes"
+]
+
+testpaths = [
+    "tests",
+]
+
+[tool.isort]
+# Setup for compatibility with black
+line_length = 88
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+ensure_newline_before_comments = true
+length_sort = true
+skip = [".tox",".venv","build","dist"]
+known_standard_library = ["setuptools","pkg_resources"]
+known_test = "pytest"
+known_compat = ""
+known_first_party = "sibylla"
+sections = ["FUTURE","STDLIB","COMPAT","TEST","THIRDPARTY","FIRSTPARTY","LOCALFOLDER"]
+default_section = "THIRDPARTY"
+
+[tool.ruff]
+# But use a different line length.
+line-length = 100
+
+
+[tool.mypy]
+namespace_packages = true
+files = "src"
+warn_return_any = true
+warn_unused_configs = true
+strict_optional = false
+pretty = true
+show_error_context = true
+install_types = true
+non_interactive = true

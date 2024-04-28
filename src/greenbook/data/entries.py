@@ -1,10 +1,12 @@
-import hashlib
 import pickle
-from dataclasses import dataclass
-from typing import Sequence
-
+import hashlib
 from attr import attrib
+from typing import Sequence
+from collections import Counter
+from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
+
+from src.greenbook.data.consts import MAX_ENTRIES_PER_CONTESTANT
 
 yaml = YAML()
 
@@ -16,6 +18,11 @@ HASH_LEN = 8
 class Contestant:
     classes: Sequence[int] = attrib(type=Sequence[int])
     name: str = attrib(type=str)
+
+    def __post_init__(self):
+        n_entries_per_class = Counter(self.classes)
+        assert all(n <= MAX_ENTRIES_PER_CONTESTANT for n in n_entries_per_class.values())
+        assert len(self.name.split()) >= 2
 
     @property
     def unique_id(self) -> str:
