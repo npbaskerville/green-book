@@ -37,3 +37,6 @@ class Manager:
 
     def to_csv(self, location: Path):
         pass
+
+    def report_rankings(self):
+        pass

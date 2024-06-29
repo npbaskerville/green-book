@@ -98,6 +98,11 @@ def _handle_export(args):
     manager.to_csv(location=args.location / "classes.csv")
 
 
+def _handle_ranking(args):
+    manager = get_manager(args)
+    manager.report_ranking()
+
+
 class CLI:
     def __init__(self):
         self._parser = argparse.ArgumentParser(
@@ -120,6 +125,7 @@ class CLI:
         self._add_lookup(subparsers)
         self._add_prizes(subparsers)
         self._add_export(subparsers)
+        self._add_ranking(subparsers)
 
     def _add_registration(self, subparsers):
         parser = subparsers.add_parser("register", help="Register a new contestant.")
@@ -251,6 +257,14 @@ class CLI:
             help="The directory to which the data should be exported.",
             required=True,
         )
+
+    def _add_ranking(self, subparsers):
+        parser = subparsers.add_parser(
+            "ranking",
+            help="List the ranking of all contestants.",
+        )
+
+        parser.set_defaults(func=_handle_ranking)
 
     def run(self):
         args = self._parser.parse_args()
