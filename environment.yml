@@ -9,6 +9,7 @@ dependencies:
   - conda-lock
   - pandas
   - pre-commit
+  - attrs
 platforms:
   - osx-64
   - osx-arm64

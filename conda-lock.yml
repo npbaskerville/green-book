@@ -13,9 +13,9 @@
 version: 1
 metadata:
   content_hash:
-    osx-arm64: 7d479b014968881fedf8b65d037decb131cc73b6f2ce82964f2ec4ce100c2a91
-    osx-64: 9a721ba75e333e31bcc4335bb1e393478e20ffa2842d25bcd75f62078502b362
-    linux-64: 4e48c1eb85d794fa6c08fc97337d3480304d36231ae9c7cdcbc8e14db4c181ef
+    osx-arm64: a2ce14cf86ae23d50e4fe882f7bc915a0f01788954891a50a9557a20bac4d287
+    osx-64: c0e2f676ea7a2e1ba41ed3796233bbdc3885edb96715ae279cc7067b8067ed2c
+    linux-64: a0dc1eda4197ed94576ed10987e8bc92b047d4b671d2cad5e7b33909d9dc5776
   channels:
   - url: conda-forge
     used_env_vars: []
@@ -125,6 +125,42 @@ package:
   hash:
     md5: 5f095bc6454094e96f146491fd03633b
     sha256: ae9fb8f68281f84482f2c234379aa12405a9e365151d43af20b3ae1f17312111
+  category: main
+  optional: false
+- name: attrs
+  version: 23.2.0
+  manager: conda
+  platform: linux-64
+  dependencies:
+    python: '>=3.7'
+  url: https://conda.anaconda.org/conda-forge/noarch/attrs-23.2.0-pyh71513ae_0.conda
+  hash:
+    md5: 5e4c0743c70186509d1412e03c2d8dfa
+    sha256: 77c7d03bdb243a048fff398cedc74327b7dc79169ebe3b4c8448b0331ea55fea
+  category: main
+  optional: false
+- name: attrs
+  version: 23.2.0
+  manager: conda
+  platform: osx-64
+  dependencies:
+    python: '>=3.7'
+  url: https://conda.anaconda.org/conda-forge/noarch/attrs-23.2.0-pyh71513ae_0.conda
+  hash:
+    md5: 5e4c0743c70186509d1412e03c2d8dfa
+    sha256: 77c7d03bdb243a048fff398cedc74327b7dc79169ebe3b4c8448b0331ea55fea
+  category: main
+  optional: false
+- name: attrs
+  version: 23.2.0
+  manager: conda
+  platform: osx-arm64
+  dependencies:
+    python: '>=3.7'
+  url: https://conda.anaconda.org/conda-forge/noarch/attrs-23.2.0-pyh71513ae_0.conda
+  hash:
+    md5: 5e4c0743c70186509d1412e03c2d8dfa
+    sha256: 77c7d03bdb243a048fff398cedc74327b7dc79169ebe3b4c8448b0331ea55fea
   category: main
   optional: false
 - name: brotli-python
