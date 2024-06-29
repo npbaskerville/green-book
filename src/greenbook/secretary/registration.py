@@ -3,7 +3,7 @@ from typing import List
 from pathlib import Path
 from ruamel.yaml import YAML
 
-from src.greenbook.data.entries import Contestant
+from greenbook.data.entries import Contestant
 
 yaml = YAML()
 
@@ -51,3 +51,6 @@ class Registrar:
     @property
     def contestants(self) -> List[Contestant]:
         return self._contestants
+
+    def to_csv(self, location: Path):
+        pass

@@ -1,10 +1,12 @@
+from __future__ import annotations
+
 from attr import attrib
-from typing import Optional, Sequence
+from typing import Sequence
 from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
 
-from src.greenbook.data.consts import MAX_ENTRIES_PER_CONTESTANT
-from src.greenbook.data.entries import Contestant
+from greenbook.data.consts import MAX_ENTRIES_PER_CONTESTANT
+from greenbook.data.entries import Contestant
 
 yaml = YAML()
 
@@ -15,9 +17,9 @@ class ShowClass:
     number: int = attrib(type=int)
     name: str = attrib(type=str)
     contestants: Sequence[Contestant] = attrib(type=Sequence[Contestant])
-    first_place: Optional[Contestant] = attrib(type=Contestant, default=None)
-    second_place: Optional[Contestant] = attrib(type=Contestant, default=None)
-    third_place: Optional[Contestant] = attrib(type=Contestant, default=None)
+    first_place: Sequence[Contestant] = attrib(type=Contestant, default=())
+    second_place: Sequence[Contestant] = attrib(type=Contestant, default=())
+    third_place: Sequence[Contestant] = attrib(type=Contestant, default=())
     commendations: Sequence[Contestant] = attrib(type=Sequence[Contestant], default=())
 
     def __post_init__(self):
@@ -42,14 +44,33 @@ class ShowClass:
         assert number > 0
         return self.contestants[number - 1]
 
+    def add_judgments(
+        self,
+        first: Sequence[Contestant],
+        second: Sequence[Contestant],
+        third: Sequence[Contestant],
+        commendations: Sequence[Contestant],
+    ) -> ShowClass:
+        return ShowClass(
+            number=self.number,
+            name=self.name,
+            contestants=self.contestants,
+            first_place=first,
+            second_place=second,
+            third_place=third,
+            commendations=commendations,
+        )
+
 
 @yaml_object(YAML)
-@dataclass
 class Show:
-    classes: Sequence[ShowClass] = attrib(type=Sequence[ShowClass])
+    def __init__(self, classes: Sequence[ShowClass]):
+        self._classes = {s.number: s for s in classes}
+        assert len(self._classes) == len(classes)
 
-    def __post_init__(self):
-        assert len(self.classes) == len(set(s.number for s in self.classes))
+    @property
+    def classes(self) -> Sequence[ShowClass]:
+        return sorted(self._classes.values(), key=lambda s: s.number)
 
     def __contains__(self, contestant: Contestant) -> bool:
         return any(contestant in s for s in self.classes)
@@ -64,3 +85,11 @@ class Show:
     @property
     def total_entries(self) -> int:
         return sum(len(s) for s in self.classes)
+
+    def class_lookup(self, number: int) -> ShowClass:
+        return self._classes[number]
+
+    def update_class(self, show_class: ShowClass) -> Show:
+        classes = {key: value for key, value in self._classes.items() if key != show_class.number}
+        classes[show_class.number] = show_class
+        return Show(list(classes.values()))
