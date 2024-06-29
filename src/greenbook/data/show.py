@@ -17,7 +17,6 @@ yaml = YAML()
 
 
 @dataclass
-@dataclass
 class Entry:
     contestant_id: int = attrib(type=int)
     class_id: str = attrib(type=str)
@@ -30,10 +29,10 @@ class ShowClass:
     class_id: str = attrib(type=str)
     name: str = attrib(type=str)
     contestants: Sequence[Contestant] = attrib(type=Sequence[Contestant])
-    first_place: Sequence[Contestant] = attrib(type=Contestant, default=())
-    second_place: Sequence[Contestant] = attrib(type=Contestant, default=())
-    third_place: Sequence[Contestant] = attrib(type=Contestant, default=())
-    commendations: Sequence[Contestant] = attrib(type=Sequence[Contestant], default=())
+    first_place: Sequence[Contestant] = attrib(type=Sequence[Contestant])
+    second_place: Sequence[Contestant] = attrib(type=Sequence[Contestant])
+    third_place: Sequence[Contestant] = attrib(type=Sequence[Contestant])
+    commendations: Sequence[Contestant] = attrib(type=Sequence[Contestant])
 
     def __post_init__(self):
         assert all(
@@ -88,6 +87,9 @@ class ShowClass:
                 points[contestant] = points.get(contestant, 0) + points
         return points
 
+    def __str__(self) -> str:
+        return f"{self.class_id}: {self.name} ({len(self.contestants)} contestants)"
+
 
 @yaml_object(yaml)
 class Show:
@@ -96,7 +98,7 @@ class Show:
         assert len(self._classes) == len(classes)
 
     def classes(self) -> Sequence[ShowClass]:
-        return sorted(self._classes.values(), key=lambda s: s.number)
+        return sorted(self._classes.values(), key=lambda s: s.class_id)
 
     def __contains__(self, contestant: Contestant) -> bool:
         return any(contestant in s for s in self.classes())

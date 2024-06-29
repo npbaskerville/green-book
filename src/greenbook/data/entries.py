@@ -16,8 +16,8 @@ HASH_LEN = 8
 @yaml_object(yaml)
 @dataclass
 class Contestant:
-    classes: Sequence[str] = attrib(type=Sequence[str])
     name: str = attrib(type=str)
+    classes: Sequence[str] = attrib(type=Sequence[str])
 
     def __post_init__(self):
         n_entries_per_class = Counter(self.classes)
@@ -41,3 +41,12 @@ class Contestant:
         if self.name == other.name:
             return self.unique_id < other.unique_id
         return self.name < other.name
+
+    def __str__(self) -> str:
+        return self.name
+
+    def __gt__(self, other):
+        return self.name > other.name
+
+    def __le__(self, other):
+        return self.name <= other.name
