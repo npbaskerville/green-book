@@ -127,3 +127,5 @@ class TestEndToEndShow:
             reverse=True,
         )
         assert list(ranking) == expected_ranking
+
+        manager.render_contestants(Path("~/rendered-contestants").expanduser())

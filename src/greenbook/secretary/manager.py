@@ -5,6 +5,7 @@ from ruamel.yaml import YAML
 
 from greenbook.data.show import Show, Entry, ShowClass
 from greenbook.data.entries import Contestant
+from greenbook.render.labels import render_contestant_to_file
 from greenbook.definitions.prizes import ALL_PRIZES, sort_contestant_by_points
 from greenbook.definitions.classes import FLAT_CLASSES
 
@@ -101,3 +102,7 @@ class Manager:
 
     def contestant_entries(self) -> Dict[Contestant, Sequence[Entry]]:
         return self._show.contestant_entries()
+
+    def render_contestants(self, directory: Path):
+        for contestant, entries in self.contestant_entries().items():
+            render_contestant_to_file(contestant.name, entries, directory)
