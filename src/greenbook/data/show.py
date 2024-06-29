@@ -1,12 +1,17 @@
 from __future__ import annotations
 
 from attr import attrib
-from typing import Sequence
+from typing import Dict, Sequence
 from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
 
 from greenbook.data.consts import MAX_ENTRIES_PER_CONTESTANT
 from greenbook.data.entries import Contestant
+from greenbook.definitions.point import (
+    FIRST_PLACE_POINTS,
+    THIRD_PLACE_POINTS,
+    SECOND_PLACE_POINTS,
+)
 
 yaml = YAML()
 
@@ -14,7 +19,7 @@ yaml = YAML()
 @yaml_object(YAML)
 @dataclass
 class ShowClass:
-    number: int = attrib(type=int)
+    class_id: str = attrib(type=str)
     name: str = attrib(type=str)
     contestants: Sequence[Contestant] = attrib(type=Sequence[Contestant])
     first_place: Sequence[Contestant] = attrib(type=Contestant, default=())
@@ -52,7 +57,7 @@ class ShowClass:
         commendations: Sequence[Contestant],
     ) -> ShowClass:
         return ShowClass(
-            number=self.number,
+            class_id=self.class_id,
             name=self.name,
             contestants=self.contestants,
             first_place=first,
@@ -61,11 +66,25 @@ class ShowClass:
             commendations=commendations,
         )
 
+    def points(self) -> Dict[Contestant:int]:
+        points = {}
+        for contestants, points in zip(
+            [
+                self.first_place,
+                self.second_place,
+                self.third_place,
+            ],
+            [FIRST_PLACE_POINTS, SECOND_PLACE_POINTS, THIRD_PLACE_POINTS],
+        ):
+            for contestant in contestants:
+                points[contestant] = points.get(contestant, 0) + points
+        return points
+
 
 @yaml_object(YAML)
 class Show:
     def __init__(self, classes: Sequence[ShowClass]):
-        self._classes = {s.number: s for s in classes}
+        self._classes = {s.class_id: s for s in classes}
         assert len(self._classes) == len(classes)
 
     @property
@@ -86,10 +105,10 @@ class Show:
     def total_entries(self) -> int:
         return sum(len(s) for s in self.classes)
 
-    def class_lookup(self, number: int) -> ShowClass:
-        return self._classes[number]
+    def class_lookup(self, class_id: str) -> ShowClass:
+        return self._classes[class_id]
 
     def update_class(self, show_class: ShowClass) -> Show:
-        classes = {key: value for key, value in self._classes.items() if key != show_class.number}
-        classes[show_class.number] = show_class
+        classes = {key: value for key, value in self._classes.items() if key != show_class.class_id}
+        classes[show_class.class_id] = show_class
         return Show(list(classes.values()))

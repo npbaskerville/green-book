@@ -1,5 +1,7 @@
-classes = {
-    "Section A: Vegetables": [
+from typing import Dict, Tuple, Sequence
+
+CLASSES: Dict[str, Sequence[Tuple[str, str]]] = {
+    "A": [
         ("1", "White Potatoes"),
         ("2", "Coloured Potatoes"),
         ("3", "Onions,"),
@@ -16,15 +18,16 @@ classes = {
         ("14", "Shallots"),
         ("15", "Any other vegetables not included in classes 1 to 14"),
         ("16", "Capsicums including Chili Peppers 17 Container of Mixed Vegetables"),
+        ("17", "Container of Mixed Vegetables"),
     ],
-    "Section B: Fruit": [
+    "B": [
         ("18", "Apples,Dessert 19 Apples,Culinary 20 Plums"),
         ("21", "Damsons"),
         ("22", "Pears"),
         ("23", "Soft Fruits"),
         ("24", "Any other fruit not included in classes 18 to 23"),
     ],
-    "Section C: Flowers": [
+    "C": [
         ("25A", "Pompom Dahlias"),
         ("25B", "Cactus & Semi Cactus Dahlias"),
         ("25C", "Decorative Dahlias"),
@@ -38,11 +41,11 @@ classes = {
         ("33", "Cut Flowers"),
         ("34", "5 cut herbs in a container"),
     ],
-    "Section D: Floral Art": [
+    "D": [
         ("35", "Arrangement of Foliage"),
         ("36", "Arrangement of Flowers"),
     ],
-    "Section E: Cookery": [
+    "E": [
         ("37", "Hand baked Bread - No Bread-makers allowed!"),
         ("38", "Bread-maker bread - Only bread-makers allowed!"),
         ("39", "Traditional Plain Shortbread (5 Pieces)"),
@@ -53,7 +56,7 @@ classes = {
         ("44", "5 Plain Scones"),
         ("45", "Peppermint Creams"),
     ],
-    "Section F: Preserves & Jams": [
+    "F": [
         ("46", "1 jar of Strawberry Jam"),
         ("47", "1 jar of Marmalade"),
         ("48", "1 jar of Fruit Jelly"),
@@ -62,14 +65,14 @@ classes = {
         ("51", "1 jar of Chutney, including Piccalilli"),
         ("52", "1 jar of Pickles"),
     ],
-    "Section G: Home Produce": [
+    "G": [
         ("53", "Home laid Eggs (any variety)"),
         ("54", "Homemade Beer or Cider"),
         ("55", "Homemade Spirit or Liqueur"),
         ("56", "Homemade Wine"),
         ("57", "Homemade Cordial"),
     ],
-    "Section H: Leisure Craft": [
+    "H": [
         ("58A", "Photographs - anybody"),
         ("58B", "Photographs - animals"),
         ("58C", "Photographs - anywhere"),
@@ -82,13 +85,13 @@ classes = {
         ("64", "An Upcycled Item"),
         ("65", "A Piece of Poetry"),
     ],
-    "Section I: Novelty": [
+    "I": [
         ("66", "Garden in a Seed Tray"),
         ("67", "A character made from Fruit or Vegetables"),
         ("68", "Most Misshapen Vegetable"),
         ("69", "Scene from history made from Lego (no sets allowed!)"),
     ],
-    "Section J: Children": [
+    "J": [
         ("70", "Decorated Fairy Cakes (3 per plate)"),
         ("71", "Garden Flowers in a Jam Jar"),
         ("72", "A piece of Artwork using Recycled Material"),
