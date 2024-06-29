@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from attr import attrib
-from typing import Dict, Sequence
+from typing import Dict, Optional, Sequence
 from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
 
@@ -112,8 +112,8 @@ class Show:
     def total_entries(self) -> int:
         return sum(len(s) for s in self.classes())
 
-    def class_lookup(self, class_id: str) -> ShowClass:
-        return self._classes[class_id]
+    def class_lookup(self, class_id: str) -> Optional[ShowClass]:
+        return self._classes.get(class_id)
 
     def update_class(self, show_class: ShowClass) -> Show:
         classes = {key: value for key, value in self._classes.items() if key != show_class.class_id}

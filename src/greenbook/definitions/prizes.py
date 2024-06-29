@@ -28,8 +28,12 @@ class HighestPointsInClasses(BasePrize):
         points: Dict[Contestant, int] = {}
         for class_id in self._class_ids:
             show_class = show.class_lookup(class_id)
+            if show_class is None:
+                continue
             for contestant, point in show_class.points().items():
                 points[contestant] = points.get(contestant, 0) + point
+        if not points:
+            return []
         max_score = max(points.values())
         return [contestant for contestant, point in points.items() if point == max_score]
 

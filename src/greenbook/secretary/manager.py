@@ -72,13 +72,16 @@ class Manager:
     def lookup_contestant(self, class_id: str, contestant_id: int) -> Contestant:
         return self._show.class_lookup(class_id).entry_lookup(contestant_id)
 
-    def report_prizes(self):
+    def report_prizes(self) -> Sequence[str]:
         _LOG.info("Beginning prize report.")
+        winning_strings = []
         for prize in ALL_PRIZES:
             winners = prize.winner(self._show)
-            winner_str = ", ".join([w for w in sorted(winners)])
+            winner_str = ", ".join([str(w) for w in sorted(winners)])
+            winning_strings.append(f"{prize}: {winner_str}")
             print(f"{prize}: {winner_str}")
         _LOG.info("Completed prize report.")
+        return winning_strings
 
     def to_csv(self, location: Path):
         raise NotImplementedError

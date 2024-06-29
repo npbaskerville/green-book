@@ -5,6 +5,7 @@ from datetime import datetime
 
 from greenbook.cli.main import get_manager, get_registrar
 from greenbook.data.entries import Contestant
+from greenbook.definitions.prizes import MBShield
 
 
 class TestEndToEndShow:
@@ -127,5 +128,10 @@ class TestEndToEndShow:
             reverse=True,
         )
         assert list(ranking) == expected_ranking
+        overall_winner = ranking[0]
+        prize = MBShield()
+        overall_prize_str = f"{prize}: {overall_winner[0]}"
+        winning_strings = manager.report_prizes()
+        assert overall_prize_str in winning_strings
 
         manager.render_contestants(Path("~/rendered-contestants").expanduser())
