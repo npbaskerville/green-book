@@ -48,6 +48,7 @@ class TestEndToEndShow:
                     entry_ids.append(entry.contestant_id)
             return entry_ids
 
+        points = {"Alice": 0, "Bob": 0, "Carole": 0, "David": 0}
         # Class 1: Alice, Bob, Carole, [David]
         manager.add_judgment(
             class_id="1",
@@ -56,6 +57,9 @@ class TestEndToEndShow:
             third=[_lookup_contestant_id(contestants[2], "1")[0]],
             commendations=[_lookup_contestant_id(contestants[3], "1")[0]],
         )
+        points["Alice"] += 3
+        points["Bob"] += 2
+        points["Carole"] += 1
         # Class 2: Alice, Bob
         manager.add_judgment(
             class_id="2",
@@ -64,7 +68,9 @@ class TestEndToEndShow:
             third=(),
             commendations=(),
         )
-        # Class 3: David, Alice, David
+        points["Bob"] += 3
+        points["Alice"] += 2
+        # Class 3: David, Alice-David
         manager.add_judgment(
             class_id="3",
             first=[_lookup_contestant_id(contestants[3], "3")[0]],
@@ -75,6 +81,9 @@ class TestEndToEndShow:
             third=[],
             commendations=(),
         )
+        points["David"] += 3
+        points["Alice"] += 2
+        points["David"] += 2
         # Class 42: Bob, Carole
         manager.add_judgment(
             class_id="42",
@@ -83,6 +92,8 @@ class TestEndToEndShow:
             third=(),
             commendations=(),
         )
+        points["Bob"] += 3
+        points["Carole"] += 2
         show_class = manager.report_class("1")
         assert tuple(show_class.first_place) == (contestants[0],)
         assert tuple(show_class.second_place) == (contestants[1],)
@@ -103,3 +114,16 @@ class TestEndToEndShow:
         assert tuple(show_class.second_place) == (contestants[2],)
         assert tuple(show_class.third_place) == ()
         assert tuple(show_class.commendations) == ()
+
+        ranking = manager.report_ranking()
+        expected_ranking = sorted(
+            [
+                (contestants[1], points["Bob"]),
+                (contestants[3], points["David"]),
+                (contestants[0], points["Alice"]),
+                (contestants[2], points["Carole"]),
+            ],
+            key=lambda x: x[1],
+            reverse=True,
+        )
+        assert list(ranking) == expected_ranking

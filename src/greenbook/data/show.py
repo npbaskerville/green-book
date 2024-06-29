@@ -74,7 +74,7 @@ class ShowClass:
         )
 
     def points(self) -> Dict[Contestant:int]:
-        points = {}
+        contestant_points = {}
         for contestants, points in zip(
             [
                 self.first_place,
@@ -84,8 +84,8 @@ class ShowClass:
             [FIRST_PLACE_POINTS, SECOND_PLACE_POINTS, THIRD_PLACE_POINTS],
         ):
             for contestant in contestants:
-                points[contestant] = points.get(contestant, 0) + points
-        return points
+                contestant_points[contestant] = contestant_points.get(contestant, 0) + points
+        return contestant_points
 
     def __str__(self) -> str:
         return f"{self.class_id}: {self.name} ({len(self.contestants)} contestants)"

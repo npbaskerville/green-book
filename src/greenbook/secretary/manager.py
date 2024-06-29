@@ -1,5 +1,5 @@
 import logging
-from typing import Dict, Optional, Sequence
+from typing import Dict, Tuple, Optional, Sequence
 from pathlib import Path
 from ruamel.yaml import YAML
 
@@ -82,11 +82,13 @@ class Manager:
     def to_csv(self, location: Path):
         raise NotImplementedError
 
-    def report_ranking(self):
+    def report_ranking(self) -> Sequence[Tuple[Contestant, int]]:
         _LOG.info("Beginning ranking report.")
-        for contestant, points in sort_contestant_by_points(self._show):
+        ranking = sort_contestant_by_points(self._show)
+        for contestant, points in ranking:
             print(f"{contestant}: {points}")
         _LOG.info("Completed ranking report.")
+        return ranking
 
     def report_class(self, class_id: str) -> ShowClass:
         show_class = self._show.class_lookup(class_id)
