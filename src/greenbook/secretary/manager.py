@@ -38,5 +38,5 @@ class Manager:
     def to_csv(self, location: Path):
         raise NotImplementedError
 
-    def report_rankings(self):
+    def report_ranking(self):
         raise NotImplementedError

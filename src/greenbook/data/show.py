@@ -16,7 +16,7 @@ from greenbook.definitions.point import (
 yaml = YAML()
 
 
-@yaml_object(YAML)
+@yaml_object(yaml)
 @dataclass
 class ShowClass:
     class_id: str = attrib(type=str)
@@ -29,7 +29,8 @@ class ShowClass:
 
     def __post_init__(self):
         assert all(
-            self.count_contestant(c) <= MAX_ENTRIES_PER_CONTESTANT for c in self.unique_contestants
+            self.count_contestant(c) <= MAX_ENTRIES_PER_CONTESTANT
+            for c in self.unique_contestants()
         )
 
     def __contains__(self, contestant: Contestant) -> bool:
@@ -41,7 +42,6 @@ class ShowClass:
     def count_contestant(self, contestant: Contestant) -> int:
         return len([c for c in self.contestants if c == contestant])
 
-    @property
     def unique_contestants(self) -> Sequence[Contestant]:
         return sorted(set(self.contestants))
 
@@ -81,29 +81,26 @@ class ShowClass:
         return points
 
 
-@yaml_object(YAML)
+@yaml_object(yaml)
 class Show:
     def __init__(self, classes: Sequence[ShowClass]):
         self._classes = {s.class_id: s for s in classes}
         assert len(self._classes) == len(classes)
 
-    @property
     def classes(self) -> Sequence[ShowClass]:
         return sorted(self._classes.values(), key=lambda s: s.number)
 
     def __contains__(self, contestant: Contestant) -> bool:
-        return any(contestant in s for s in self.classes)
+        return any(contestant in s for s in self.classes())
 
-    @property
     def unique_contestants(self) -> Sequence[Contestant]:
-        return sorted(set(c for s in self.classes for c in s.contestants))
+        return sorted(set(c for s in self.classes() for c in s.contestants))
 
     def count_contestant(self, contestant: Contestant) -> int:
-        return len([c for s in self.classes for c in s.contestants if c == contestant])
+        return len([c for s in self.classes() for c in s.contestants if c == contestant])
 
-    @property
     def total_entries(self) -> int:
-        return sum(len(s) for s in self.classes)
+        return sum(len(s) for s in self.classes())
 
     def class_lookup(self, class_id: str) -> ShowClass:
         return self._classes[class_id]

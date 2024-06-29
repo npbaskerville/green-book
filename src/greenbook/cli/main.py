@@ -43,7 +43,7 @@ def _handle_register(args):
 def _handle_allocate(args):
     registrar = get_registrar(args)
     manager = get_manager(args)
-    manager.allocate(contestants=registrar.contestants, allow_reallocate=args.confirm_reallocate)
+    manager.allocate(contestants=registrar.contestants(), allow_reallocate=args.confirm_reallocate)
 
 
 def _handle_judge(args):
@@ -112,10 +112,10 @@ class CLI:
         self._parser.add_argument(
             "--location",
             help="The local in which the Greenbook data are stored.",
-            default=os.getenv("GREENBOOK_LOCATION", Path("~/greenbook-data").resolve()),
+            default=os.getenv("GREENBOOK_LOCATION", Path("~/greenbook-data").expanduser()),
         )
         self._parser.add_argument(
-            "--name", help="The name of the show being managed.", required=True
+            "--show_name", help="The name of the show being managed.", required=True
         )
 
         subparsers = self._parser.add_subparsers(dest="command")
@@ -139,7 +139,7 @@ class CLI:
             "--entries",
             dest="entries",
             required=False,
-            type=lambda x: list(map(int, x.split(","))),
+            type=lambda x: list(x.split(",")),
             help=("Comma-separated list of entry numbers for the contestant. "),
         )
 
@@ -269,3 +269,9 @@ class CLI:
     def run(self):
         args = self._parser.parse_args()
         args.func(args)
+
+
+def run_cli():
+    logging.basicConfig(level=logging.INFO)
+    cli = CLI()
+    cli.run()

@@ -6,14 +6,14 @@ from collections import Counter
 from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
 
-from src.greenbook.data.consts import MAX_ENTRIES_PER_CONTESTANT
+from greenbook.data.consts import MAX_ENTRIES_PER_CONTESTANT
 
 yaml = YAML()
 
 HASH_LEN = 8
 
 
-@yaml_object(YAML)
+@yaml_object(yaml)
 @dataclass
 class Contestant:
     classes: Sequence[int] = attrib(type=Sequence[int])
@@ -24,14 +24,13 @@ class Contestant:
         assert all(n <= MAX_ENTRIES_PER_CONTESTANT for n in n_entries_per_class.values())
         assert len(self.name.split()) >= 2
 
-    @property
     def unique_id(self) -> str:
         hash_data = self.name + "-".join(str(c) for c in sorted(self.classes))
         byte_like = pickle.dumps(hash_data)
         return hashlib.blake2b(byte_like, digest_size=HASH_LEN // 2).hexdigest()
 
     def __hash__(self) -> int:
-        return int(self.unique_id, 16)
+        return int(self.unique_id(), 16)
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Contestant):
