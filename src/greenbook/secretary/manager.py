@@ -17,7 +17,7 @@ class Manager:
     def allocate(self, contestants: Sequence[Contestant], allow_reallocate: bool = False):
         for contestant in contestants:
             for show_class in contestant.classes:
-                pass
+                raise NotImplementedError
 
     def add_judgment(
         self,
@@ -27,16 +27,16 @@ class Manager:
         third: Sequence[Contestant],
         commendations: Sequence[Contestant],
     ):
-        pass
+        raise NotImplementedError
 
     def lookup_contestant(self, class_number: int, contestant_id: int) -> Contestant:
-        pass
+        raise NotImplementedError
 
     def report_prizes(self):
-        pass
+        raise NotImplementedError
 
     def to_csv(self, location: Path):
-        pass
+        raise NotImplementedError
 
     def report_rankings(self):
-        pass
+        raise NotImplementedError
