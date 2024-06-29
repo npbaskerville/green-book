@@ -180,7 +180,7 @@ class CLI:
             dest="class_id",
             help="The class being judged.",
             required=True,
-            type=int,
+            type=str,
         )
 
         parser.add_argument(
@@ -233,7 +233,7 @@ class CLI:
             dest="class_id",
             help="The class being judged.",
             required=True,
-            type=int,
+            type=str,
         )
 
     def _add_prizes(self, subparsers):
