@@ -10,6 +10,11 @@ dependencies:
   - pandas
   - pre-commit
   - attrs
+  - pytest
+  - pytest-cov
+  - pytest-xdist
+  - pytest-mock
+  - pytest-asyncio
 platforms:
   - osx-64
   - osx-arm64

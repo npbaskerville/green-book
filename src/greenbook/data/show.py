@@ -16,6 +16,14 @@ from greenbook.definitions.point import (
 yaml = YAML()
 
 
+@dataclass
+@dataclass
+class Entry:
+    contestant_id: int = attrib(type=int)
+    class_id: str = attrib(type=str)
+    name: str = attrib(type=str)
+
+
 @yaml_object(yaml)
 @dataclass
 class ShowClass:
@@ -109,3 +117,16 @@ class Show:
         classes = {key: value for key, value in self._classes.items() if key != show_class.class_id}
         classes[show_class.class_id] = show_class
         return Show(list(classes.values()))
+
+    def contestant_entries(
+        self,
+    ) -> Dict[Contestant, Sequence[Entry]]:
+        entries = {}
+        for show_class in self.classes():
+            for number, contestant in enumerate(show_class.contestants):
+                entries[contestant] = entries.get(contestant, []) + [
+                    Entry(
+                        contestant_id=number + 1, class_id=show_class.class_id, name=show_class.name
+                    )
+                ]
+        return entries

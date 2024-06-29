@@ -16,7 +16,7 @@ HASH_LEN = 8
 @yaml_object(yaml)
 @dataclass
 class Contestant:
-    classes: Sequence[int] = attrib(type=Sequence[int])
+    classes: Sequence[str] = attrib(type=Sequence[str])
     name: str = attrib(type=str)
 
     def __post_init__(self):

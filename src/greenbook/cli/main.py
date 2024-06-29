@@ -22,76 +22,55 @@ ALLOWED_SCORES = [
 _LOG = logging.getLogger(__name__)
 
 
-def get_registrar(args) -> Registrar:
-    location = Path(args.location) / "contestants.yaml"
+def get_registrar(loc) -> Registrar:
+    location = Path(loc) / "contestants.yaml"
     location.parent.mkdir(parents=True, exist_ok=True)
     return Registrar(ledger_loc=location)
 
 
-def get_manager(args) -> Manager:
-    location = Path(args.location) / "classes.yaml"
+def get_manager(loc) -> Manager:
+    location = Path(loc) / "classes.yaml"
     location.parent.mkdir(parents=True, exist_ok=True)
     return Manager(ledger_loc=location)
 
 
 def _handle_register(args):
-    registrar = get_registrar(args)
+    registrar = get_registrar(args.location)
     contestant = Contestant(name=args.name, classes=args.entries)
     registrar.register(contestant, allow_update=args.allow_update)
 
 
 def _handle_allocate(args):
-    registrar = get_registrar(args)
-    manager = get_manager(args)
+    registrar = get_registrar(args.location)
+    manager = get_manager(args.location)
     manager.allocate(contestants=registrar.contestants(), allow_reallocate=args.confirm_reallocate)
 
 
 def _handle_judge(args):
-    manager = get_manager(args)
-    firsts = [
-        manager.lookup_contestant(class_number=args.class_id, contestant_id=contestant_id)
-        for contestant_id in args.first
-    ]
-    seconds = [
-        manager.lookup_contestant(class_number=args.class_id, contestant_id=contestant_id)
-        for contestant_id in args.second
-    ]
-
-    thirds = [
-        manager.lookup_contestant(class_number=args.class_id, contestant_id=contestant_id)
-        for contestant_id in args.third
-    ]
-
-    commendations = [
-        manager.lookup_contestant(class_number=args.class_id, contestant_id=contestant_id)
-        for contestant_id in args.commendations
-    ]
-
+    manager = get_manager(args.location)
     manager.add_judgment(
-        show_number=args.class_id,
-        first=firsts,
-        second=seconds,
-        third=thirds,
-        commendations=commendations,
+        class_id=args.class_id,
+        first=args.first,
+        second=args.second,
+        third=args.third,
+        commendations=args.commendations,
     )
 
 
 def _handle_lookup(args):
-    manager = get_manager(args)
-    contestant = manager.lookup_contestant(
-        class_number=args.class_id, contestant_id=args.contestant_id
-    )
+    manager = get_manager(args.location)
+    contestant = manager.lookup_contestant(class_id=args.class_id, contestant_id=args.contestant_id)
     _LOG.info(f"Contestant {args.contestant_id} in class {args.class_id}: {contestant}")
 
 
 def _handle_prizes(args):
-    manager = get_manager(args)
+    manager = get_manager(args.location)
     manager.report_prizes()
 
 
 def _handle_export(args):
-    registrar = get_registrar(args)
-    manager = get_manager(args)
+    registrar = get_registrar(args.location)
+    manager = get_manager(args.location)
     export_dir = Path(args.location)
     export_dir.mkdir(parents=True, exist_ok=True)
     registrar.to_csv(location=args.location / "contestants.csv")
@@ -99,7 +78,7 @@ def _handle_export(args):
 
 
 def _handle_ranking(args):
-    manager = get_manager(args)
+    manager = get_manager(args.location)
     manager.report_ranking()
 
 
