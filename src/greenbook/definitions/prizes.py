@@ -46,7 +46,7 @@ class HighestPointInSection(HighestPointsInClasses):
 # region utils
 def sort_contestant_by_points(show: Show) -> Sequence[Tuple[Contestant, int]]:
     points: Dict[Contestant, int] = {}
-    for show_class in show.classes:
+    for show_class in show.classes():
         for contestant, point in show_class.points().items():
             points[contestant] = points.get(contestant, 0) + point
     return sorted(points.items(), key=lambda x: x[1], reverse=True)
@@ -108,4 +108,13 @@ class ChildrensCup(HighestPointsInClasses):
         )
 
 
+ALL_PRIZES = [
+    WilliamTrowPooleTrophy(),
+    JoanHollierPlate(),
+    MBShield(),
+    MrsAnnPorterCup(),
+    ButlerTrophy(),
+    CourtHouseSalver(),
+    ChildrensCup(),
+]
 # endregion

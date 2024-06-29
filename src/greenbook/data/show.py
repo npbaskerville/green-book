@@ -16,16 +16,23 @@ from greenbook.definitions.point import (
 yaml = YAML()
 
 
+@dataclass
+class Entry:
+    contestant_id: int = attrib(type=int)
+    class_id: str = attrib(type=str)
+    name: str = attrib(type=str)
+
+
 @yaml_object(yaml)
 @dataclass
 class ShowClass:
     class_id: str = attrib(type=str)
     name: str = attrib(type=str)
     contestants: Sequence[Contestant] = attrib(type=Sequence[Contestant])
-    first_place: Sequence[Contestant] = attrib(type=Contestant, default=())
-    second_place: Sequence[Contestant] = attrib(type=Contestant, default=())
-    third_place: Sequence[Contestant] = attrib(type=Contestant, default=())
-    commendations: Sequence[Contestant] = attrib(type=Sequence[Contestant], default=())
+    first_place: Sequence[Contestant] = attrib(type=Sequence[Contestant])
+    second_place: Sequence[Contestant] = attrib(type=Sequence[Contestant])
+    third_place: Sequence[Contestant] = attrib(type=Sequence[Contestant])
+    commendations: Sequence[Contestant] = attrib(type=Sequence[Contestant])
 
     def __post_init__(self):
         assert all(
@@ -80,6 +87,9 @@ class ShowClass:
                 points[contestant] = points.get(contestant, 0) + points
         return points
 
+    def __str__(self) -> str:
+        return f"{self.class_id}: {self.name} ({len(self.contestants)} contestants)"
+
 
 @yaml_object(yaml)
 class Show:
@@ -88,7 +98,7 @@ class Show:
         assert len(self._classes) == len(classes)
 
     def classes(self) -> Sequence[ShowClass]:
-        return sorted(self._classes.values(), key=lambda s: s.number)
+        return sorted(self._classes.values(), key=lambda s: s.class_id)
 
     def __contains__(self, contestant: Contestant) -> bool:
         return any(contestant in s for s in self.classes())
@@ -109,3 +119,16 @@ class Show:
         classes = {key: value for key, value in self._classes.items() if key != show_class.class_id}
         classes[show_class.class_id] = show_class
         return Show(list(classes.values()))
+
+    def contestant_entries(
+        self,
+    ) -> Dict[Contestant, Sequence[Entry]]:
+        entries = {}
+        for show_class in self.classes():
+            for number, contestant in enumerate(show_class.contestants):
+                entries[contestant] = entries.get(contestant, []) + [
+                    Entry(
+                        contestant_id=number + 1, class_id=show_class.class_id, name=show_class.name
+                    )
+                ]
+        return entries

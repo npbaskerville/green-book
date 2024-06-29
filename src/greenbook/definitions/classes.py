@@ -1,4 +1,5 @@
 from typing import Dict, Tuple, Sequence
+from itertools import chain
 
 CLASSES: Dict[str, Sequence[Tuple[str, str]]] = {
     "A": [
@@ -100,3 +101,5 @@ CLASSES: Dict[str, Sequence[Tuple[str, str]]] = {
         ("75", "Scene from history made from Lego (no sets allowed!)"),
     ],
 }
+
+FLAT_CLASSES = dict(chain.from_iterable(CLASSES.values()))

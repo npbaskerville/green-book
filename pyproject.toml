@@ -18,12 +18,6 @@ addopts = [
     "--junitxml=tests/out/reports/junit.xml",
     # Use multiprocessing for speed.
     "--numprocesses=auto",
-    # Benchmark-disable means that tests with benchmarks will be run as regular tests,
-    # without benchmarking (but with asserts or course).
-    # Benchmarking is disabled anyway when using multi-process runs, this just supresses
-    # a warning. Benchmarking can be enabled again via CLI with --enable-benchmark,
-    # e.g. when writing a new benchmark test. In CI we enable this.
-    "--benchmark-disable",
     # Show durations of slowest tests.
     "--durations=50",
     # Shorter tracebacks (by default pytest includes code snippets)
