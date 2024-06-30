@@ -1,5 +1,7 @@
 import pytest
 
+import numpy as np
+import pandas as pd
 from pathlib import Path
 from datetime import datetime
 from collections import defaultdict
@@ -7,6 +9,7 @@ from collections import defaultdict
 from greenbook.cli.main import get_manager, get_registrar
 from greenbook.data.entries import Contestant
 from greenbook.definitions.prizes import MBShield
+from greenbook.definitions.classes import FLAT_CLASSES
 
 
 class TestEndToEndShow:
@@ -175,3 +178,47 @@ class TestEndToEndShow:
 
         for class_id, entries in class_entries.items():
             assert len(entries) == len(set(entries))
+
+    def test_export(self, out_dir):
+        contestants = [
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
+            Contestant(
+                name="Bob Beetroot",
+                classes=["1", "2", "2", "42"],
+            ),
+            Contestant(
+                name="Carole Carrot",
+                classes=["1", "42"],
+            ),
+            Contestant(
+                name="Aunt Dahlia",
+                classes=["1", "3", "3"],
+            ),
+        ]
+        registrar = get_registrar(out_dir)
+        for contestant in contestants:
+            registrar.register(contestant)
+
+        manager = get_manager(out_dir)
+        manager.allocate(registrar.contestants())
+        csv_loc = out_dir / "contestants.csv"
+        manager.to_csv(csv_loc)
+        df = pd.read_csv(csv_loc, index_col=0)
+        assert list(df.columns) == list(FLAT_CLASSES.keys())
+        alice_locations = [(1, "1"), (1, "2"), (1, "3")]
+        bob_locations = [(2, "1"), (2, "2"), (3, "2"), (1, "42")]
+        carole_locations = [(3, "1"), (2, "42")]
+        dahlia_locations = [(4, "1"), (2, "3"), (3, "3")]
+        empty_locations = {(idx, col) for idx in df.index for col in df.columns}
+        empty_locations -= set(alice_locations)
+        empty_locations -= set(bob_locations)
+        empty_locations -= set(carole_locations)
+        empty_locations -= set(dahlia_locations)
+        for idx, col in empty_locations:
+            assert np.isnan(float(df.loc[idx, col]))
+        for name, locs in zip(
+            ["Alice Appleby", "Bob Beetroot", "Carole Carrot", "Aunt Dahlia"],
+            [alice_locations, bob_locations, carole_locations, dahlia_locations],
+        ):
+            for idx, col in locs:
+                assert df.loc[idx, col] == name
