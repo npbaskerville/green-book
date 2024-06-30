@@ -17,6 +17,10 @@ class TestEndToEndShow:
         random_dir = Path(f".{hash(datetime.now())}")
         random_dir.mkdir(exist_ok=True)
         yield random_dir
+        # remove all files and dir
+        for file in random_dir.iterdir():
+            file.unlink()
+        random_dir.rmdir()
 
     def test_basic_winners(self, out_dir):
         contestants = [
