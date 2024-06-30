@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from attr import attrib
-from typing import Dict, Sequence
+from typing import Dict, Optional, Sequence
 from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
 
@@ -74,7 +74,7 @@ class ShowClass:
         )
 
     def points(self) -> Dict[Contestant:int]:
-        points = {}
+        contestant_points = {}
         for contestants, points in zip(
             [
                 self.first_place,
@@ -84,8 +84,8 @@ class ShowClass:
             [FIRST_PLACE_POINTS, SECOND_PLACE_POINTS, THIRD_PLACE_POINTS],
         ):
             for contestant in contestants:
-                points[contestant] = points.get(contestant, 0) + points
-        return points
+                contestant_points[contestant] = contestant_points.get(contestant, 0) + points
+        return contestant_points
 
     def __str__(self) -> str:
         return f"{self.class_id}: {self.name} ({len(self.contestants)} contestants)"
@@ -112,8 +112,8 @@ class Show:
     def total_entries(self) -> int:
         return sum(len(s) for s in self.classes())
 
-    def class_lookup(self, class_id: str) -> ShowClass:
-        return self._classes[class_id]
+    def class_lookup(self, class_id: str) -> Optional[ShowClass]:
+        return self._classes.get(class_id)
 
     def update_class(self, show_class: ShowClass) -> Show:
         classes = {key: value for key, value in self._classes.items() if key != show_class.class_id}

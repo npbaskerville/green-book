@@ -1,10 +1,11 @@
 import logging
-from typing import Dict, Optional, Sequence
+from typing import Dict, Tuple, Optional, Sequence
 from pathlib import Path
 from ruamel.yaml import YAML
 
 from greenbook.data.show import Show, Entry, ShowClass
 from greenbook.data.entries import Contestant
+from greenbook.render.labels import render_contestant_to_file
 from greenbook.definitions.prizes import ALL_PRIZES, sort_contestant_by_points
 from greenbook.definitions.classes import FLAT_CLASSES
 
@@ -71,22 +72,27 @@ class Manager:
     def lookup_contestant(self, class_id: str, contestant_id: int) -> Contestant:
         return self._show.class_lookup(class_id).entry_lookup(contestant_id)
 
-    def report_prizes(self):
+    def report_prizes(self) -> Sequence[str]:
         _LOG.info("Beginning prize report.")
+        winning_strings = []
         for prize in ALL_PRIZES:
             winners = prize.winner(self._show)
-            winner_str = ", ".join([w for w in sorted(winners)])
+            winner_str = ", ".join([str(w) for w in sorted(winners)])
+            winning_strings.append(f"{prize}: {winner_str}")
             print(f"{prize}: {winner_str}")
         _LOG.info("Completed prize report.")
+        return winning_strings
 
     def to_csv(self, location: Path):
         raise NotImplementedError
 
-    def report_ranking(self):
+    def report_ranking(self) -> Sequence[Tuple[Contestant, int]]:
         _LOG.info("Beginning ranking report.")
-        for contestant, points in sort_contestant_by_points(self._show):
+        ranking = sort_contestant_by_points(self._show)
+        for contestant, points in ranking:
             print(f"{contestant}: {points}")
         _LOG.info("Completed ranking report.")
+        return ranking
 
     def report_class(self, class_id: str) -> ShowClass:
         show_class = self._show.class_lookup(class_id)
@@ -99,3 +105,7 @@ class Manager:
 
     def contestant_entries(self) -> Dict[Contestant, Sequence[Entry]]:
         return self._show.contestant_entries()
+
+    def render_contestants(self, directory: Path):
+        for contestant, entries in self.contestant_entries().items():
+            render_contestant_to_file(contestant.name, entries, directory)

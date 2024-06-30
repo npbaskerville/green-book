@@ -2,9 +2,11 @@ import pytest
 
 from pathlib import Path
 from datetime import datetime
+from collections import defaultdict
 
 from greenbook.cli.main import get_manager, get_registrar
 from greenbook.data.entries import Contestant
+from greenbook.definitions.prizes import MBShield
 
 
 class TestEndToEndShow:
@@ -28,7 +30,7 @@ class TestEndToEndShow:
                 classes=["1", "42"],
             ),
             Contestant(
-                name="David Date",
+                name="Aunt Dahlia",
                 classes=["1", "3", "3"],
             ),
         ]
@@ -48,7 +50,8 @@ class TestEndToEndShow:
                     entry_ids.append(entry.contestant_id)
             return entry_ids
 
-        # Class 1: Alice, Bob, Carole, [David]
+        points = {"Alice": 0, "Bob": 0, "Carole": 0, "Dahlia": 0}
+        # Class 1: Alice, Bob, Carole, [Dahlia]
         manager.add_judgment(
             class_id="1",
             first=[_lookup_contestant_id(contestants[0], "1")[0]],
@@ -56,6 +59,9 @@ class TestEndToEndShow:
             third=[_lookup_contestant_id(contestants[2], "1")[0]],
             commendations=[_lookup_contestant_id(contestants[3], "1")[0]],
         )
+        points["Alice"] += 3
+        points["Bob"] += 2
+        points["Carole"] += 1
         # Class 2: Alice, Bob
         manager.add_judgment(
             class_id="2",
@@ -64,7 +70,9 @@ class TestEndToEndShow:
             third=(),
             commendations=(),
         )
-        # Class 3: David, Alice, David
+        points["Bob"] += 3
+        points["Alice"] += 2
+        # Class 3: Dahlia, Alice-Dahlia
         manager.add_judgment(
             class_id="3",
             first=[_lookup_contestant_id(contestants[3], "3")[0]],
@@ -75,6 +83,9 @@ class TestEndToEndShow:
             third=[],
             commendations=(),
         )
+        points["Dahlia"] += 3
+        points["Alice"] += 2
+        points["Dahlia"] += 2
         # Class 42: Bob, Carole
         manager.add_judgment(
             class_id="42",
@@ -83,6 +94,8 @@ class TestEndToEndShow:
             third=(),
             commendations=(),
         )
+        points["Bob"] += 3
+        points["Carole"] += 2
         show_class = manager.report_class("1")
         assert tuple(show_class.first_place) == (contestants[0],)
         assert tuple(show_class.second_place) == (contestants[1],)
@@ -103,3 +116,58 @@ class TestEndToEndShow:
         assert tuple(show_class.second_place) == (contestants[2],)
         assert tuple(show_class.third_place) == ()
         assert tuple(show_class.commendations) == ()
+
+        ranking = manager.report_ranking()
+        expected_ranking = sorted(
+            [
+                (contestants[1], points["Bob"]),
+                (contestants[3], points["Dahlia"]),
+                (contestants[0], points["Alice"]),
+                (contestants[2], points["Carole"]),
+            ],
+            key=lambda x: x[1],
+            reverse=True,
+        )
+        assert list(ranking) == expected_ranking
+        overall_winner = ranking[0]
+        prize = MBShield()
+        overall_prize_str = f"{prize}: {overall_winner[0]}"
+        winning_strings = manager.report_prizes()
+        assert overall_prize_str in winning_strings
+
+        manager.render_contestants(Path("~/rendered-contestants").expanduser())
+
+    def test_unique_contestant_ids(self, out_dir):
+        """
+        Check the contestant IDs in every class are unique.
+        """
+        contestants = [
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
+            Contestant(
+                name="Bob Beetroot",
+                classes=["1", "2", "2", "42"],
+            ),
+            Contestant(
+                name="Carole Carrot",
+                classes=["1", "42"],
+            ),
+            Contestant(
+                name="Aunt Dahlia",
+                classes=["1", "3", "3"],
+            ),
+        ]
+        registrar = get_registrar(out_dir)
+        for contestant in contestants:
+            registrar.register(contestant)
+
+        manager = get_manager(out_dir)
+        manager.allocate(registrar.contestants())
+        contestant_entries = manager.contestant_entries()
+
+        class_entries = defaultdict(list)
+        for entries in contestant_entries.values():
+            for entry in entries:
+                class_entries[entry.class_id].append(entry.contestant_id)
+
+        for class_id, entries in class_entries.items():
+            assert len(entries) == len(set(entries))
