@@ -1,3 +1,4 @@
+import pandas as pd
 import logging
 from typing import Dict, Tuple, Optional, Sequence
 from pathlib import Path
@@ -84,7 +85,23 @@ class Manager:
         return winning_strings
 
     def to_csv(self, location: Path):
-        raise NotImplementedError
+        """
+        Create a dataframe of contestant_id x class. In each cell, the value
+         is the name of the contestant corresponding to the contestant_id in the class,
+          or None if that contestant id does not exist in that class.
+        """
+        all_contestant_ids = set()
+        for contestant, entries in self.contestant_entries().items():
+            all_contestant_ids.update([entry.contestant_id for entry in entries])
+        all_contestant_ids = sorted(all_contestant_ids)
+        data = {c: [None] * len(all_contestant_ids) for c in FLAT_CLASSES}
+        df = pd.DataFrame(data, index=all_contestant_ids)
+        for contestant, entries in self.contestant_entries().items():
+            name = contestant.name
+            for entry in entries:
+                df.at[entry.contestant_id, entry.class_id] = name
+        df.to_csv(location)
+        _LOG.info(f"Exported contestant data to {location}")
 
     def report_ranking(self) -> Sequence[Tuple[Contestant, int]]:
         _LOG.info("Beginning ranking report.")

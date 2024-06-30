@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
 
 from greenbook.data.consts import MAX_ENTRIES_PER_CONTESTANT
+from greenbook.definitions.classes import FLAT_CLASSES
 
 yaml = YAML()
 
@@ -23,6 +24,9 @@ class Contestant:
         n_entries_per_class = Counter(self.classes)
         assert all(n <= MAX_ENTRIES_PER_CONTESTANT for n in n_entries_per_class.values())
         assert len(self.name.split()) >= 2
+        for c in self.classes:
+            if c not in FLAT_CLASSES:
+                raise ValueError(f"Unknown class {c}")
 
     def unique_id(self) -> str:
         hash_data = self.name + "-".join(str(c) for c in sorted(self.classes))
