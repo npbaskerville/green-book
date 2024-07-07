@@ -82,6 +82,11 @@ def _handle_ranking(args):
     manager.report_ranking()
 
 
+def _handle_report_class(args):
+    manager = get_manager(args.location)
+    manager.report_class(class_id=args.class_id)
+
+
 class CLI:
     def __init__(self):
         self._parser = argparse.ArgumentParser(
@@ -105,6 +110,7 @@ class CLI:
         self._add_prizes(subparsers)
         self._add_export(subparsers)
         self._add_ranking(subparsers)
+        self._add_report_class(subparsers)
 
     def _add_registration(self, subparsers):
         parser = subparsers.add_parser("register", help="Register a new contestant.")
@@ -244,6 +250,22 @@ class CLI:
         )
 
         parser.set_defaults(func=_handle_ranking)
+
+    def _add_report_class(self, subparsers):
+        parser = subparsers.add_parser(
+            "report_class",
+            help="List the ranking of all contestants in a class.",
+        )
+
+        parser.set_defaults(func=_handle_report_class)
+
+        parser.add_argument(
+            "--class",
+            dest="class_id",
+            help="The class being judged.",
+            required=True,
+            type=str,
+        )
 
     def run(self):
         args = self._parser.parse_args()
