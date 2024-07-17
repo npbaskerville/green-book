@@ -42,7 +42,7 @@ repos:
   -   id: mypy
       args: [--install-types, --non-interactive]
       # Prevent invoking this hook on any non-python file.
-      files: 'src/sibylla/.+\.py'
+      files: 'src/greenbook/.+\.py'
       # By default pre-commit runs mypy (or any hook) in an isolated venv without our dependencies.
       # This is bad (for mypy), because type checking also needs to know about types in the dependencies.
       # This setting causes pre-commit to run the mypy from the current environment (our pipenv venv)
