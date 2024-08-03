@@ -1,12 +1,13 @@
 import pandas as pd
 import logging
-from typing import Dict, Tuple, Optional, Sequence
+from typing import Dict, List, Tuple, Optional, Sequence
 from pathlib import Path
 from ruamel.yaml import YAML
 
 from greenbook.data.show import Show, Entry, ShowClass
 from greenbook.data.entries import Contestant
 from greenbook.render.labels import render_contestant_to_file
+from greenbook.render.results import render_prizes, render_class_results
 from greenbook.definitions.prizes import ALL_PRIZES, sort_contestant_by_points
 from greenbook.definitions.classes import FLAT_CLASSES
 
@@ -23,7 +24,7 @@ class Manager:
     def allocate(self, contestants: Sequence[Contestant], allow_reallocate: bool = False):
         if self._ledger_loc.exists() and not allow_reallocate:
             raise ValueError("Ledger already exists, use allow_reallocate=True to overwrite")
-        grouped_by_class = {}
+        grouped_by_class: Dict[str, List[Contestant]] = {}
         for contestant in contestants:
             for class_id in contestant.classes:
                 if class_id not in grouped_by_class:
@@ -126,3 +127,19 @@ class Manager:
     def render_contestants(self, directory: Path):
         for contestant, entries in self.contestant_entries().items():
             render_contestant_to_file(contestant.name, entries, directory)
+
+    def render_final_report(self, directory: Path):
+        """
+        Produce 2 PDFs:
+            1. A table per class in the show, giving the entry numbers, the names
+            of the contestants and their results in the class.
+            2. A list of all the prizes and their winners.
+        """
+        # 1. Produce a table per class in the show
+        class_dfs: List[Tuple[str, str, pd.DataFrame]] = []
+        for show_class in self._show.classes():
+            class_df = show_class.to_df()
+            class_dfs.append((show_class.class_id, show_class.name, class_df))
+        render_class_results(class_dfs, directory)
+        # 2. Produce a list of all the prizes and their winners
+        render_prizes(self.report_prizes(), directory)

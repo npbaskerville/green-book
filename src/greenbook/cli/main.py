@@ -73,8 +73,10 @@ def _handle_export(args):
     manager = get_manager(args.location)
     export_dir = Path(args.location)
     export_dir.mkdir(parents=True, exist_ok=True)
-    registrar.to_csv(location=args.location / "contestants.csv")
-    manager.to_csv(location=args.location / "classes.csv")
+    out_loc = args.location / "export"
+    out_loc.mkdir(parents=True, exist_ok=True)
+    registrar.to_csv(location=out_loc / "contestants.csv")
+    manager.to_csv(location=out_loc / "classes.csv")
 
 
 def _handle_ranking(args):
@@ -85,6 +87,20 @@ def _handle_ranking(args):
 def _handle_report_class(args):
     manager = get_manager(args.location)
     manager.report_class(class_id=args.class_id)
+
+
+def _handle_render_entrants(args):
+    location = Path(args.location)
+    manager = get_manager(location)
+    render_loc = location / "render"
+    render_loc.mkdir(parents=True, exist_ok=True)
+    manager.render_contestants(render_loc)
+
+
+def _handle_final_report(args):
+    manager = get_manager(args.location)
+    render_loc = Path(args.location) / "render"
+    manager.render_final_report(render_loc)
 
 
 class CLI:
@@ -111,6 +127,8 @@ class CLI:
         self._add_export(subparsers)
         self._add_ranking(subparsers)
         self._add_report_class(subparsers)
+        self._add_final_report(subparsers)
+        self._add_render_entrants(subparsers)
 
     def _add_registration(self, subparsers):
         parser = subparsers.add_parser("register", help="Register a new contestant.")
@@ -265,6 +283,34 @@ class CLI:
             help="The class being judged.",
             required=True,
             type=str,
+        )
+
+    def _add_final_report(self, subparsers):
+        parser = subparsers.add_parser(
+            "final_report",
+            help="Generate the final report.",
+        )
+
+        parser.set_defaults(func=_handle_final_report)
+
+        parser.add_argument(
+            "--location",
+            help="The directory to which the results should be rendered.",
+            required=True,
+        )
+
+    def _add_render_entrants(self, subparsers):
+        parser = subparsers.add_parser(
+            "render_entrants",
+            help="Render the entrants to the show.",
+        )
+
+        parser.set_defaults(func=_handle_render_entrants)
+
+        parser.add_argument(
+            "--location",
+            help="The directory to which the results should be rendered.",
+            required=True,
         )
 
     def run(self):

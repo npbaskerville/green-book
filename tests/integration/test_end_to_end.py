@@ -34,11 +34,11 @@ class TestEndToEndShow:
             ),
             Contestant(
                 name="Carole Carrot",
-                classes=["1", "42"],
+                classes=["1", "42", "61"],
             ),
             Contestant(
                 name="Aunt Dahlia",
-                classes=["1", "3", "3"],
+                classes=["1", "3", "3", "58A", "61"],
             ),
         ]
         registrar = get_registrar(out_dir)
@@ -103,6 +103,25 @@ class TestEndToEndShow:
         )
         points["Bob"] += 3
         points["Carole"] += 2
+        # Class 58A: Dahlia wins
+        manager.add_judgment(
+            class_id="58A",
+            first=[_lookup_contestant_id(contestants[3], "58A")[0]],
+            second=[],
+            third=[],
+            commendations=[],
+        )
+        points["Dahlia"] += 3
+        # Class 61: Carole, Dahlia
+        manager.add_judgment(
+            class_id="61",
+            first=[_lookup_contestant_id(contestants[2], "61")[0]],
+            second=[_lookup_contestant_id(contestants[3], "61")[0]],
+            third=[],
+            commendations=[],
+        )
+        points["Carole"] += 3
+        points["Dahlia"] += 2
         show_class = manager.report_class("1")
         assert tuple(show_class.first_place) == (contestants[0],)
         assert tuple(show_class.second_place) == (contestants[1],)
@@ -123,7 +142,16 @@ class TestEndToEndShow:
         assert tuple(show_class.second_place) == (contestants[2],)
         assert tuple(show_class.third_place) == ()
         assert tuple(show_class.commendations) == ()
-
+        show_class = manager.report_class("58A")
+        assert tuple(show_class.first_place) == (contestants[3],)
+        assert tuple(show_class.second_place) == ()
+        assert tuple(show_class.third_place) == ()
+        assert tuple(show_class.commendations) == ()
+        show_class = manager.report_class("61")
+        assert tuple(show_class.first_place) == (contestants[2],)
+        assert tuple(show_class.second_place) == (contestants[3],)
+        assert tuple(show_class.third_place) == ()
+        assert tuple(show_class.commendations) == ()
         ranking = manager.report_ranking()
         expected_ranking = sorted(
             [
@@ -142,7 +170,14 @@ class TestEndToEndShow:
         winning_strings = manager.report_prizes()
         assert overall_prize_str in winning_strings
 
-        manager.render_contestants(Path("~/rendered-contestants").expanduser())
+        # get repo root dir
+        greenbook_dir = Path(__file__).parent.parent.parent
+        test_outdir = greenbook_dir / "test-output"
+        test_outdir.mkdir(exist_ok=True)
+        manager.render_contestants(test_outdir / "rendered-contestants")
+        manager.render_final_report(test_outdir / "final-report")
+        manager.to_csv(test_outdir / "classes.csv")
+        registrar.to_csv(test_outdir / "contestants.csv")
 
     def test_unique_contestant_ids(self, out_dir):
         """
