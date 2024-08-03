@@ -16,6 +16,7 @@ dependencies:
   - pytest-mock
   - pytest-asyncio
   - matplotlib
+  - mypy
 platforms:
   - osx-64
   - osx-arm64

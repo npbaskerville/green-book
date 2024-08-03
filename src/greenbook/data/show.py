@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pandas as pd
 from attr import attrib
 from typing import Dict, Optional, Sequence
 from dataclasses import dataclass
@@ -89,6 +90,28 @@ class ShowClass:
 
     def __str__(self) -> str:
         return f"{self.class_id}: {self.name} ({len(self.contestants)} contestants)"
+
+    def to_df(self) -> pd.DataFrame:
+        """
+        Produce and return a DataFrame with columns: contestant_id, name, place (if any)
+        """
+        df_data = {"name": [], "entry": [], "place": []}
+        for i, contestant in enumerate(self.contestants):
+            df_data["name"].append(contestant.name)
+            df_data["entry"].append(i + 1)
+            if contestant in self.first_place:
+                df_data["place"].append(1)
+            elif contestant in self.second_place:
+                df_data["place"].append(2)
+            elif contestant in self.third_place:
+                df_data["place"].append(3)
+            else:
+                df_data["place"].append(None)
+        df = pd.DataFrame(df_data)
+        # change place to int type
+        df["place"] = df["place"].astype("Int64")
+        df.sort_values("place", inplace=True)
+        return df
 
 
 @yaml_object(yaml)
