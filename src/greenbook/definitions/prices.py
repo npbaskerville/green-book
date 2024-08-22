@@ -1,0 +1,2 @@
+ENTRY_COST = 0.1  # 10p
+FREE_CLASSES = ("J",)

@@ -5,7 +5,7 @@ from pathlib import Path
 from greenbook.data.show import Entry
 
 
-def render_entries(contestant_name: str, entries: Sequence[Entry]) -> plt.Figure:
+def render_entries(contestant_name: str, entries: Sequence[Entry], price: float) -> plt.Figure:
     fig, ax = plt.subplots(figsize=(8.27, 11.69), dpi=100)
     y = 0.95
     x = 0.1
@@ -32,15 +32,17 @@ def render_entries(contestant_name: str, entries: Sequence[Entry]) -> plt.Figure
         y -= 0.15
         if y < 0.1:
             y = 0.95
-            x += 0.2
+            x += 0.22
     ax.axis("off")
-    ax.set_title(f"Entries for {contestant_name}")
+    ax.set_title(f"Entries for {contestant_name} (£{price:.2f})")
     return fig
 
 
-def render_contestant_to_file(contestant_name: str, entries: Sequence[Entry], directory: Path):
+def render_contestant_to_file(
+    contestant_name: str, entries: Sequence[Entry], directory: Path, price: float
+):
     directory.mkdir(parents=True, exist_ok=True)
-    fig = render_entries(contestant_name, entries)
+    fig = render_entries(contestant_name, entries, price)
     filename = directory / f"{contestant_name}.png"
     fig.savefig(filename)
     plt.close(fig)
