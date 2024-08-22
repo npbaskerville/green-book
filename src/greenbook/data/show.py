@@ -105,6 +105,8 @@ class ShowClass:
                 df_data["place"].append(2)
             elif contestant in self.third_place:
                 df_data["place"].append(3)
+            elif contestant in self.commendations:
+                df_data["place"].append(42)
             else:
                 df_data["place"].append(None)
         df = pd.DataFrame(df_data)

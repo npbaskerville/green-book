@@ -44,6 +44,7 @@ def _handle_allocate(args):
     registrar = get_registrar(args.location)
     manager = get_manager(args.location)
     manager.allocate(contestants=registrar.contestants())
+    _handle_render_entrants(args)
 
 
 def _handle_judge(args):
@@ -202,8 +203,9 @@ class CLI:
             "--commendations",
             dest="commendations",
             help="The commended contestant(s).",
-            required=True,
+            required=False,
             type=lambda x: list(map(int, x.split(","))),
+            default=[],
         )
 
     def _add_lookup(self, subparsers):
