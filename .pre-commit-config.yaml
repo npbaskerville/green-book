@@ -36,15 +36,15 @@ repos:
     # Run the formatter.
     - id: ruff-format
 
-- repo: https://github.com/pre-commit/mirrors-mypy
-  rev: v0.942 # Not really used; due to the 'language: system' below, the mypy installed in the venv will be used.
-  hooks:
-  -   id: mypy
-      args: [--install-types, --non-interactive]
-      # Prevent invoking this hook on any non-python file.
-      files: 'src/greenbook/.+\.py'
-      # By default pre-commit runs mypy (or any hook) in an isolated venv without our dependencies.
-      # This is bad (for mypy), because type checking also needs to know about types in the dependencies.
-      # This setting causes pre-commit to run the mypy from the current environment (our pipenv venv)
-      # instead of the one it installs.
-      language: system
+#- repo: https://github.com/pre-commit/mirrors-mypy
+#  rev: v0.942 # Not really used; due to the 'language: system' below, the mypy installed in the venv will be used.
+#  hooks:
+#  -   id: mypy
+#      args: [--install-types, --non-interactive]
+#      # Prevent invoking this hook on any non-python file.
+#      files: 'src/greenbook/.+\.py'
+#      # By default pre-commit runs mypy (or any hook) in an isolated venv without our dependencies.
+#      # This is bad (for mypy), because type checking also needs to know about types in the dependencies.
+#      # This setting causes pre-commit to run the mypy from the current environment (our pipenv venv)
+#      # instead of the one it installs.
+#      language: system

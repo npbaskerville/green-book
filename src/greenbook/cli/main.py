@@ -43,7 +43,7 @@ def _handle_register(args):
 def _handle_allocate(args):
     registrar = get_registrar(args.location)
     manager = get_manager(args.location)
-    manager.allocate(contestants=registrar.contestants(), allow_reallocate=args.confirm_reallocate)
+    manager.allocate(contestants=registrar.contestants())
 
 
 def _handle_judge(args):
@@ -157,14 +157,6 @@ class CLI:
         )
 
         parser.set_defaults(func=_handle_allocate)
-
-        parser.add_argument(
-            "--confirm_reallocate",
-            dest="confirm_reallocate",
-            action="store_true",
-            help="Confirm the reallocation of contestants to numbers.",
-            default=False,
-        )
 
     def _add_judging(self, subparsers):
         parser = subparsers.add_parser(

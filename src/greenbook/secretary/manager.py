@@ -24,9 +24,7 @@ class Manager:
             with self._ledger_loc.open("r") as f:
                 self._show = yaml.load(f)
 
-    def allocate(self, contestants: Sequence[Contestant], allow_reallocate: bool = False):
-        if self._ledger_loc.exists() and not allow_reallocate:
-            raise ValueError("Ledger already exists, use allow_reallocate=True to overwrite")
+    def allocate(self, contestants: Sequence[Contestant]):
         grouped_by_class: Dict[str, List[Contestant]] = {}
         for contestant in contestants:
             for class_id in contestant.classes:
