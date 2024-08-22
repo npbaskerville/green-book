@@ -108,7 +108,7 @@ class ChildrensCup(HighestPointsInClasses):
         super().__init__(
             name="Children's Cup",
             # TODO: this disagrees with the entry form - clarify the definition
-            class_ids=[str(idx) for idx in range(66, 76)],
+            class_ids=[str(idx) for idx in range(70, 76)],
         )
 
 

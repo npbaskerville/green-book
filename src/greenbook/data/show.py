@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 from attr import attrib
-from typing import Dict, Optional, Sequence
+from typing import Dict, Tuple, Optional, Sequence
 from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
 
@@ -30,10 +30,10 @@ class ShowClass:
     class_id: str = attrib(type=str)
     name: str = attrib(type=str)
     contestants: Sequence[Contestant] = attrib(type=Sequence[Contestant])
-    first_place: Sequence[Contestant] = attrib(type=Sequence[Contestant])
-    second_place: Sequence[Contestant] = attrib(type=Sequence[Contestant])
-    third_place: Sequence[Contestant] = attrib(type=Sequence[Contestant])
-    commendations: Sequence[Contestant] = attrib(type=Sequence[Contestant])
+    first_place: Sequence[Tuple[Contestant, int]] = attrib(type=Sequence[Tuple[Contestant, int]])
+    second_place: Sequence[Tuple[Contestant, int]] = attrib(type=Sequence[Tuple[Contestant, int]])
+    third_place: Sequence[Tuple[Contestant, int]] = attrib(type=Sequence[Tuple[Contestant, int]])
+    commendations: Sequence[Tuple[Contestant, int]] = attrib(type=Sequence[Tuple[Contestant, int]])
 
     def __post_init__(self):
         assert all(
@@ -59,10 +59,10 @@ class ShowClass:
 
     def add_judgments(
         self,
-        first: Sequence[Contestant],
-        second: Sequence[Contestant],
-        third: Sequence[Contestant],
-        commendations: Sequence[Contestant],
+        first: Sequence[Tuple[Contestant, int]],
+        second: Sequence[Tuple[Contestant, int]],
+        third: Sequence[Tuple[Contestant, int]],
+        commendations: Sequence[Tuple[Contestant, int]],
     ) -> ShowClass:
         return ShowClass(
             class_id=self.class_id,
@@ -84,7 +84,7 @@ class ShowClass:
             ],
             [FIRST_PLACE_POINTS, SECOND_PLACE_POINTS, THIRD_PLACE_POINTS],
         ):
-            for contestant in contestants:
+            for contestant, _ in contestants:
                 contestant_points[contestant] = contestant_points.get(contestant, 0) + points
         return contestant_points
 
@@ -96,16 +96,21 @@ class ShowClass:
         Produce and return a DataFrame with columns: contestant_id, name, place (if any)
         """
         df_data = {"name": [], "entry": [], "place": []}
+        first_tuples = [tuple(c) for c in self.first_place]
+        second_tuples = [tuple(c) for c in self.second_place]
+        third_tuples = [tuple(c) for c in self.third_place]
+        commendation_tuples = [tuple(c) for c in self.commendations]
         for i, contestant in enumerate(self.contestants):
             df_data["name"].append(contestant.name)
-            df_data["entry"].append(i + 1)
-            if contestant in self.first_place:
+            contetant_id = i + 1
+            df_data["entry"].append(contetant_id)
+            if (contestant, contetant_id) in first_tuples:
                 df_data["place"].append(1)
-            elif contestant in self.second_place:
+            elif (contestant, contetant_id) in second_tuples:
                 df_data["place"].append(2)
-            elif contestant in self.third_place:
+            elif (contestant, contetant_id) in third_tuples:
                 df_data["place"].append(3)
-            elif contestant in self.commendations:
+            elif (contestant, contetant_id) in commendation_tuples:
                 df_data["place"].append(42)
             else:
                 df_data["place"].append(None)

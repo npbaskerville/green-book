@@ -74,7 +74,7 @@ def _handle_export(args):
     manager = get_manager(args.location)
     export_dir = Path(args.location)
     export_dir.mkdir(parents=True, exist_ok=True)
-    out_loc = args.location / "export"
+    out_loc = Path(args.location) / "export"
     out_loc.mkdir(parents=True, exist_ok=True)
     registrar.to_csv(location=out_loc / "contestants.csv")
     manager.to_csv(location=out_loc / "classes.csv")
@@ -247,12 +247,6 @@ class CLI:
         )
 
         parser.set_defaults(func=_handle_export)
-
-        parser.add_argument(
-            "--location",
-            help="The directory to which the data should be exported.",
-            required=True,
-        )
 
     def _add_ranking(self, subparsers):
         parser = subparsers.add_parser(

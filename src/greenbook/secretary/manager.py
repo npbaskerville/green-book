@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 import logging
 from typing import Dict, List, Tuple, Optional, Sequence
@@ -57,10 +58,10 @@ class Manager:
         commendations: Sequence[int],
     ):
         show_class = self._show.class_lookup(class_id)
-        first_contestants = [self.lookup_contestant(class_id, c) for c in first]
-        second_contestants = [self.lookup_contestant(class_id, c) for c in second]
-        third_contestants = [self.lookup_contestant(class_id, c) for c in third]
-        commendation_contestants = [self.lookup_contestant(class_id, c) for c in commendations]
+        first_contestants = [(self.lookup_contestant(class_id, c), c) for c in first]
+        second_contestants = [(self.lookup_contestant(class_id, c), c) for c in second]
+        third_contestants = [(self.lookup_contestant(class_id, c), c) for c in third]
+        commendation_contestants = [(self.lookup_contestant(class_id, c), c) for c in commendations]
         show_class = show_class.add_judgments(
             first=first_contestants,
             second=second_contestants,
@@ -138,7 +139,9 @@ class Manager:
         """
         # 1. Produce a table per class in the show
         class_dfs: List[Tuple[str, str, pd.DataFrame]] = []
-        for show_class in self._show.classes():
+        for show_class in sorted(
+            self._show.classes(), key=lambda c: int(re.sub(r"\D", "", c.class_id))
+        ):
             class_df = show_class.to_df()
             class_dfs.append((show_class.class_id, show_class.name, class_df))
         render_class_results(class_dfs, directory)
