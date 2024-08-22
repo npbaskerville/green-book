@@ -20,6 +20,9 @@ class Manager:
     def __init__(self, ledger_loc: Path):
         self._ledger_loc = ledger_loc
         self._show: Optional[Show] = None
+        if self._ledger_loc.exists():
+            with self._ledger_loc.open("r") as f:
+                self._show = yaml.load(f)
 
     def allocate(self, contestants: Sequence[Contestant], allow_reallocate: bool = False):
         if self._ledger_loc.exists() and not allow_reallocate:

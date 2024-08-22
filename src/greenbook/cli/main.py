@@ -114,10 +114,6 @@ class CLI:
             help="The local in which the Greenbook data are stored.",
             default=os.getenv("GREENBOOK_LOCATION", Path("~/greenbook-data").expanduser()),
         )
-        self._parser.add_argument(
-            "--show_name", help="The name of the show being managed.", required=True
-        )
-
         subparsers = self._parser.add_subparsers(dest="command")
         self._add_registration(subparsers)
         self._add_allocation(subparsers)
@@ -190,22 +186,25 @@ class CLI:
             "--first",
             dest="first",
             help="The first place contestant(s).",
-            required=True,
+            required=False,
             type=lambda x: list(map(int, x.split(","))),
+            default=[],
         )
         parser.add_argument(
             "--second",
             dest="second",
             help="The second place contestant(s).",
-            required=True,
+            required=False,
             type=lambda x: list(map(int, x.split(","))),
+            default=[],
         )
         parser.add_argument(
             "--third",
             dest="third",
             help="The third place contestant(s).",
-            required=True,
+            required=False,
             type=lambda x: list(map(int, x.split(","))),
+            default=[],
         )
         parser.add_argument(
             "--commendations",
@@ -293,12 +292,6 @@ class CLI:
 
         parser.set_defaults(func=_handle_final_report)
 
-        parser.add_argument(
-            "--location",
-            help="The directory to which the results should be rendered.",
-            required=True,
-        )
-
     def _add_render_entrants(self, subparsers):
         parser = subparsers.add_parser(
             "render_entrants",
@@ -306,12 +299,6 @@ class CLI:
         )
 
         parser.set_defaults(func=_handle_render_entrants)
-
-        parser.add_argument(
-            "--location",
-            help="The directory to which the results should be rendered.",
-            required=True,
-        )
 
     def run(self):
         args = self._parser.parse_args()
