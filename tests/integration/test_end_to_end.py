@@ -32,18 +32,18 @@ class TestEndToEndShow:
 
     def test_basic_winners(self, out_dir):
         contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
+            Contestant(name="Alice Appleby", classes=["1", "2", "3", "7"]),
             Contestant(
                 name="Bob Beetroot",
                 classes=["1", "2", "2", "42"],
             ),
             Contestant(
                 name="Carole Carrot",
-                classes=["1", "42", "61"],
+                classes=["1", "42", "61", "7"],
             ),
             Contestant(
                 name="Aunt Dahlia",
-                classes=["1", "3", "3", "58A", "61"],
+                classes=["1", "3", "3", "58A", "61", "7"],
             ),
         ]
         registrar = get_registrar(out_dir)
@@ -127,6 +127,14 @@ class TestEndToEndShow:
         )
         points["Carole"] += 3
         points["Dahlia"] += 2
+        # Class 7: No winners
+        manager.add_judgment(
+            class_id="7",
+            first=[],
+            second=[],
+            third=[],
+            commendations=[],
+        )
         show_class = manager.report_class("1")
         assert tuple(show_class.first_place) == ((contestants[0], 1),)
         assert tuple(show_class.second_place) == ((contestants[1], 2),)
@@ -155,6 +163,11 @@ class TestEndToEndShow:
         show_class = manager.report_class("61")
         assert tuple(show_class.first_place) == ((contestants[2], 1),)
         assert tuple(show_class.second_place) == ((contestants[3], 2),)
+        assert tuple(show_class.third_place) == ()
+        assert tuple(show_class.commendations) == ()
+        show_class = manager.report_class("7")
+        assert tuple(show_class.first_place) == ()
+        assert tuple(show_class.second_place) == ()
         assert tuple(show_class.third_place) == ()
         assert tuple(show_class.commendations) == ()
         ranking = manager.report_ranking()
