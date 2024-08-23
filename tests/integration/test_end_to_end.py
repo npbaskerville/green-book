@@ -22,7 +22,12 @@ class TestEndToEndShow:
         yield random_dir
         # remove all files and dir
         for file in random_dir.iterdir():
-            file.unlink()
+            if file.is_file():
+                file.unlink()
+            else:
+                for subfile in file.iterdir():
+                    subfile.unlink()
+                file.rmdir()
         random_dir.rmdir()
 
     def test_basic_winners(self, out_dir):
@@ -213,6 +218,41 @@ class TestEndToEndShow:
 
         for class_id, entries in class_entries.items():
             assert len(entries) == len(set(entries))
+
+    def test_rolling_registration(self, out_dir):
+        """
+        Check that the contestants IDs in each class do not change as new contestants are added.
+        """
+        contestants = [
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
+            Contestant(
+                name="Bob Beetroot",
+                classes=["1", "2", "2", "42"],
+            ),
+            Contestant(
+                name="Carole Carrot",
+                classes=["1", "42"],
+            ),
+            Contestant(
+                name="Aunt Dahlia",
+                classes=["1", "3", "3"],
+            ),
+        ]
+        out_dir_single = out_dir / "single"
+        out_dir_rolling = out_dir / "rolling"
+        registrar_rolling = get_registrar(out_dir_single)
+        for contestant in contestants:
+            registrar_rolling.register(contestant)
+            manager = get_manager(out_dir_single)
+            manager.allocate(registrar_rolling.contestants())
+        contestant_entries_rolling = manager.contestant_entries()
+        registrar_single = get_registrar(out_dir_rolling)
+        for contestant in contestants:
+            registrar_single.register(contestant)
+        manager = get_manager(out_dir_rolling)
+        manager.allocate(registrar_single.contestants())
+        contestant_entries_single = manager.contestant_entries()
+        assert contestant_entries_rolling == contestant_entries_single
 
     def test_export(self, out_dir):
         contestants = [
