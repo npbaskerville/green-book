@@ -103,3 +103,6 @@ CLASSES: Dict[str, Sequence[Tuple[str, str]]] = {
 }
 
 FLAT_CLASSES = dict(chain.from_iterable(CLASSES.values()))
+CLASS_ID_TO_SECTION = {
+    class_id: section for section, class_ids in CLASSES.items() for class_id, _ in class_ids
+}

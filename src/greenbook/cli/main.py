@@ -43,7 +43,8 @@ def _handle_register(args):
 def _handle_allocate(args):
     registrar = get_registrar(args.location)
     manager = get_manager(args.location)
-    manager.allocate(contestants=registrar.contestants(), allow_reallocate=args.confirm_reallocate)
+    manager.allocate(contestants=registrar.contestants())
+    _handle_render_entrants(args)
 
 
 def _handle_judge(args):
@@ -73,7 +74,7 @@ def _handle_export(args):
     manager = get_manager(args.location)
     export_dir = Path(args.location)
     export_dir.mkdir(parents=True, exist_ok=True)
-    out_loc = args.location / "export"
+    out_loc = Path(args.location) / "export"
     out_loc.mkdir(parents=True, exist_ok=True)
     registrar.to_csv(location=out_loc / "contestants.csv")
     manager.to_csv(location=out_loc / "classes.csv")
@@ -114,10 +115,6 @@ class CLI:
             help="The local in which the Greenbook data are stored.",
             default=os.getenv("GREENBOOK_LOCATION", Path("~/greenbook-data").expanduser()),
         )
-        self._parser.add_argument(
-            "--show_name", help="The name of the show being managed.", required=True
-        )
-
         subparsers = self._parser.add_subparsers(dest="command")
         self._add_registration(subparsers)
         self._add_allocation(subparsers)
@@ -162,14 +159,6 @@ class CLI:
 
         parser.set_defaults(func=_handle_allocate)
 
-        parser.add_argument(
-            "--confirm_reallocate",
-            dest="confirm_reallocate",
-            action="store_true",
-            help="Confirm the reallocation of contestants to numbers.",
-            default=False,
-        )
-
     def _add_judging(self, subparsers):
         parser = subparsers.add_parser(
             "judge",
@@ -190,29 +179,33 @@ class CLI:
             "--first",
             dest="first",
             help="The first place contestant(s).",
-            required=True,
+            required=False,
             type=lambda x: list(map(int, x.split(","))),
+            default=[],
         )
         parser.add_argument(
             "--second",
             dest="second",
             help="The second place contestant(s).",
-            required=True,
+            required=False,
             type=lambda x: list(map(int, x.split(","))),
+            default=[],
         )
         parser.add_argument(
             "--third",
             dest="third",
             help="The third place contestant(s).",
-            required=True,
+            required=False,
             type=lambda x: list(map(int, x.split(","))),
+            default=[],
         )
         parser.add_argument(
             "--commendations",
             dest="commendations",
             help="The commended contestant(s).",
-            required=True,
+            required=False,
             type=lambda x: list(map(int, x.split(","))),
+            default=[],
         )
 
     def _add_lookup(self, subparsers):
@@ -255,12 +248,6 @@ class CLI:
 
         parser.set_defaults(func=_handle_export)
 
-        parser.add_argument(
-            "--location",
-            help="The directory to which the data should be exported.",
-            required=True,
-        )
-
     def _add_ranking(self, subparsers):
         parser = subparsers.add_parser(
             "ranking",
@@ -293,12 +280,6 @@ class CLI:
 
         parser.set_defaults(func=_handle_final_report)
 
-        parser.add_argument(
-            "--location",
-            help="The directory to which the results should be rendered.",
-            required=True,
-        )
-
     def _add_render_entrants(self, subparsers):
         parser = subparsers.add_parser(
             "render_entrants",
@@ -306,12 +287,6 @@ class CLI:
         )
 
         parser.set_defaults(func=_handle_render_entrants)
-
-        parser.add_argument(
-            "--location",
-            help="The directory to which the results should be rendered.",
-            required=True,
-        )
 
     def run(self):
         args = self._parser.parse_args()

@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 import logging
 from typing import Dict, List, Tuple, Optional, Sequence
@@ -8,8 +9,9 @@ from greenbook.data.show import Show, Entry, ShowClass
 from greenbook.data.entries import Contestant
 from greenbook.render.labels import render_contestant_to_file
 from greenbook.render.results import render_prizes, render_class_results
+from greenbook.definitions.prices import ENTRY_COST, FREE_CLASSES
 from greenbook.definitions.prizes import ALL_PRIZES, sort_contestant_by_points
-from greenbook.definitions.classes import FLAT_CLASSES
+from greenbook.definitions.classes import FLAT_CLASSES, CLASS_ID_TO_SECTION
 
 _LOG = logging.getLogger(__name__)
 
@@ -20,10 +22,11 @@ class Manager:
     def __init__(self, ledger_loc: Path):
         self._ledger_loc = ledger_loc
         self._show: Optional[Show] = None
+        if self._ledger_loc.exists():
+            with self._ledger_loc.open("r") as f:
+                self._show = yaml.load(f)
 
-    def allocate(self, contestants: Sequence[Contestant], allow_reallocate: bool = False):
-        if self._ledger_loc.exists() and not allow_reallocate:
-            raise ValueError("Ledger already exists, use allow_reallocate=True to overwrite")
+    def allocate(self, contestants: Sequence[Contestant]):
         grouped_by_class: Dict[str, List[Contestant]] = {}
         for contestant in contestants:
             for class_id in contestant.classes:
@@ -56,10 +59,10 @@ class Manager:
         commendations: Sequence[int],
     ):
         show_class = self._show.class_lookup(class_id)
-        first_contestants = [self.lookup_contestant(class_id, c) for c in first]
-        second_contestants = [self.lookup_contestant(class_id, c) for c in second]
-        third_contestants = [self.lookup_contestant(class_id, c) for c in third]
-        commendation_contestants = [self.lookup_contestant(class_id, c) for c in commendations]
+        first_contestants = [(self.lookup_contestant(class_id, c), c) for c in first]
+        second_contestants = [(self.lookup_contestant(class_id, c), c) for c in second]
+        third_contestants = [(self.lookup_contestant(class_id, c), c) for c in third]
+        commendation_contestants = [(self.lookup_contestant(class_id, c), c) for c in commendations]
         show_class = show_class.add_judgments(
             first=first_contestants,
             second=second_contestants,
@@ -126,7 +129,11 @@ class Manager:
 
     def render_contestants(self, directory: Path):
         for contestant, entries in self.contestant_entries().items():
-            render_contestant_to_file(contestant.name, entries, directory)
+            price = 0.0
+            for entry in entries:
+                if CLASS_ID_TO_SECTION[entry.class_id] not in FREE_CLASSES:
+                    price += ENTRY_COST
+            render_contestant_to_file(contestant.name, entries, directory, price=price)
 
     def render_final_report(self, directory: Path):
         """
@@ -137,7 +144,9 @@ class Manager:
         """
         # 1. Produce a table per class in the show
         class_dfs: List[Tuple[str, str, pd.DataFrame]] = []
-        for show_class in self._show.classes():
+        for show_class in sorted(
+            self._show.classes(), key=lambda c: int(re.sub(r"\D", "", c.class_id))
+        ):
             class_df = show_class.to_df()
             class_dfs.append((show_class.class_id, show_class.name, class_df))
         render_class_results(class_dfs, directory)
