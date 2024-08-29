@@ -105,18 +105,18 @@ class ShowClass:
             contetant_id = i + 1
             df_data["entry"].append(contetant_id)
             if (contestant, contetant_id) in first_tuples:
-                df_data["place"].append(1)
+                df_data["place"].append("1st")
             elif (contestant, contetant_id) in second_tuples:
-                df_data["place"].append(2)
+                df_data["place"].append("2nd")
             elif (contestant, contetant_id) in third_tuples:
-                df_data["place"].append(3)
+                df_data["place"].append("3rd")
             elif (contestant, contetant_id) in commendation_tuples:
-                df_data["place"].append(42)
+                df_data["place"].append("Commendation")
             else:
                 df_data["place"].append(None)
         df = pd.DataFrame(df_data)
         # change place to int type
-        df["place"] = df["place"].astype("Int64")
+        df["place"] = df["place"].astype("str")
         df.sort_values("place", inplace=True)
         return df
 

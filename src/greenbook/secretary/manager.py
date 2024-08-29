@@ -8,7 +8,7 @@ from ruamel.yaml import YAML
 from greenbook.data.show import Show, Entry, ShowClass
 from greenbook.data.entries import Contestant
 from greenbook.render.labels import render_contestant_to_file
-from greenbook.render.results import render_prizes, render_class_results
+from greenbook.render.results import render_prizes, render_ranking, render_class_results
 from greenbook.definitions.prices import ENTRY_COST, FREE_CLASSES
 from greenbook.definitions.prizes import ALL_PRIZES, sort_contestant_by_points
 from greenbook.definitions.classes import FLAT_CLASSES, CLASS_ID_TO_SECTION
@@ -152,3 +152,5 @@ class Manager:
         render_class_results(class_dfs, directory)
         # 2. Produce a list of all the prizes and their winners
         render_prizes(self.report_prizes(), directory)
+        # 3. produce overall points ranking
+        render_ranking(self.report_ranking(), directory)
