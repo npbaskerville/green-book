@@ -85,7 +85,10 @@ class ShowClass:
             [FIRST_PLACE_POINTS, SECOND_PLACE_POINTS, THIRD_PLACE_POINTS],
         ):
             for contestant, _ in contestants:
-                contestant_points[contestant] = contestant_points.get(contestant, 0) + points
+                if contestant not in self.contestants:
+                    contestant_points[contestant] = points
+                # otherwise, the contestant has already received points for a higher place,
+                #  so they receive no more
         return contestant_points
 
     def __str__(self) -> str:
