@@ -4,7 +4,7 @@ from typing import List
 from pathlib import Path
 from ruamel.yaml import YAML
 
-from greenbook.data.entries import Contestant
+from greenbook.data.entries import Contestant, DeletedContestant
 from greenbook.definitions.classes import FLAT_CLASSES
 
 yaml = YAML()
@@ -53,6 +53,24 @@ class Registrar:
             )
         with open(self._ledger_loc, "w") as f:
             yaml.dump(self._contestants, f)
+
+    def delete_contestant(self, name: str):
+        if name not in self._name_to_contestant:
+            _LOG.warning(f"Contestant {name} not found.")
+            return
+        contestant = self._name_to_contestant[name]
+        deleted_contestant = DeletedContestant(
+            name=f"DELETED ({contestant.name})",
+            classes=contestant.classes,
+            paid=0.0,
+        )
+        new_contestants = [deleted_contestant if c == contestant else c for c in self._contestants]
+        self._contestants = new_contestants
+        self._name_to_contestant = {c.name: c for c in self._contestants}
+
+        with open(self._ledger_loc, "w") as f:
+            yaml.dump(self._contestants, f)
+        _LOG.info(f"Deleted contestant {name}. Had paid = £{contestant.paid}")
 
     def contestants(self) -> List[Contestant]:
         return self._contestants

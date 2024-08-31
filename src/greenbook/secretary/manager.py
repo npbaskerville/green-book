@@ -6,7 +6,7 @@ from pathlib import Path
 from ruamel.yaml import YAML
 
 from greenbook.data.show import Show, Entry, ShowClass
-from greenbook.data.entries import Contestant
+from greenbook.data.entries import Contestant, DeletedContestant
 from greenbook.render.labels import render_contestant_to_file
 from greenbook.render.results import render_prizes, render_ranking, render_class_results
 from greenbook.definitions.prices import ENTRY_COST, FREE_CLASSES
@@ -141,6 +141,8 @@ class Manager:
 
     def render_contestants(self, directory: Path):
         for contestant, entries in self.contestant_entries().items():
+            if isinstance(contestant, DeletedContestant):
+                continue
             price = 0.0
             for entry in entries:
                 if CLASS_ID_TO_SECTION[entry.class_id] not in FREE_CLASSES:

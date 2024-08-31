@@ -40,6 +40,11 @@ def _handle_register(args):
     registrar.register(contestant, allow_update=args.allow_update)
 
 
+def _handle_delete(args):
+    registrar = get_registrar(args.location)
+    registrar.delete_contestant(args.name)
+
+
 def _handle_allocate(args):
     registrar = get_registrar(args.location)
     manager = get_manager(args.location)
@@ -136,6 +141,7 @@ class CLI:
         self._add_final_report(subparsers)
         self._add_render_entrants(subparsers)
         self._add_manual_prize(subparsers)
+        self._add_delete(subparsers)
 
     def _add_registration(self, subparsers):
         parser = subparsers.add_parser("register", help="Register a new contestant.")
@@ -168,6 +174,14 @@ class CLI:
             required=False,
             type=float,
             default=0.0,
+        )
+
+    def _add_delete(self, subparsers):
+        parser = subparsers.add_parser("delete", help="Delete a contestant.")
+        parser.set_defaults(func=_handle_delete)
+
+        parser.add_argument(
+            "--name", dest="name", help="The name of the contestant.", required=True
         )
 
     def _add_allocation(self, subparsers):

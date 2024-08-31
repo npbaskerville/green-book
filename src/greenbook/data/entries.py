@@ -58,3 +58,9 @@ class Contestant:
 
     def __le__(self, other):
         return self.name <= other.name
+
+
+class DeletedContestant(Contestant):
+    def __post_init__(self):
+        super().__post_init__()
+        assert self.name.startswith("DELETED (")
