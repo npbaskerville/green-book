@@ -36,7 +36,7 @@ def get_manager(loc) -> Manager:
 
 def _handle_register(args):
     registrar = get_registrar(args.location)
-    contestant = Contestant(name=args.name, classes=args.entries)
+    contestant = Contestant(name=args.name, classes=args.entries, paid=float(args.paid))
     registrar.register(contestant, allow_update=args.allow_update)
 
 
@@ -55,6 +55,15 @@ def _handle_judge(args):
         second=args.second,
         third=args.third,
         commendations=args.commendations,
+    )
+
+
+def _handle_manual_prize(args):
+    manager = get_manager(args.location)
+    manager.add_prize(
+        class_id=args.class_id,
+        contestant_id=args.contestant_id,
+        prize=args.prize,
     )
 
 
@@ -126,6 +135,7 @@ class CLI:
         self._add_report_class(subparsers)
         self._add_final_report(subparsers)
         self._add_render_entrants(subparsers)
+        self._add_manual_prize(subparsers)
 
     def _add_registration(self, subparsers):
         parser = subparsers.add_parser("register", help="Register a new contestant.")
@@ -149,6 +159,15 @@ class CLI:
             action="store_true",
             help="Allow updating an existing contestant.",
             default=False,
+        )
+
+        parser.add_argument(
+            "--paid",
+            dest="paid",
+            help="The amount paid by the contestant.",
+            required=False,
+            type=float,
+            default=0.0,
         )
 
     def _add_allocation(self, subparsers):
@@ -206,6 +225,38 @@ class CLI:
             required=False,
             type=lambda x: list(map(int, x.split(","))),
             default=[],
+        )
+
+    def _add_manual_prize(self, subparsers):
+        parser = subparsers.add_parser(
+            "manual_prize",
+            help="Add a prize to a contestant in a class.",
+        )
+
+        parser.set_defaults(func=_handle_manual_prize)
+
+        parser.add_argument(
+            "--class",
+            dest="class_id",
+            help="The class being judged.",
+            required=True,
+            type=str,
+        )
+
+        parser.add_argument(
+            "--contestant_id",
+            dest="contestant_id",
+            help="The contestant being judged.",
+            required=True,
+            type=int,
+        )
+
+        parser.add_argument(
+            "--prize",
+            dest="prize",
+            help="The prize being awarded.",
+            required=True,
+            type=str,
         )
 
     def _add_lookup(self, subparsers):

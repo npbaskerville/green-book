@@ -32,18 +32,21 @@ class TestEndToEndShow:
 
     def test_basic_winners(self, out_dir):
         contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3", "7"]),
+            Contestant(name="Alice Appleby", classes=["1", "2", "3", "7"], paid=0.0),
             Contestant(
                 name="Bob Beetroot",
                 classes=["1", "2", "2", "42"],
+                paid=0.0,
             ),
             Contestant(
                 name="Carole Carrot",
                 classes=["1", "42", "61", "7"],
+                paid=0.0,
             ),
             Contestant(
                 name="Aunt Dahlia",
-                classes=["1", "3", "3", "58A", "61", "7"],
+                classes=["1", "3", "3", "58A", "61", "7", "62"],
+                paid=0.0,
             ),
         ]
         registrar = get_registrar(out_dir)
@@ -97,7 +100,7 @@ class TestEndToEndShow:
         )
         points["Dahlia"] += 3
         points["Alice"] += 2
-        points["Dahlia"] += 2
+        # no points for Dahlia's second entry
         # Class 42: Bob, Carole
         manager.add_judgment(
             class_id="42",
@@ -135,6 +138,15 @@ class TestEndToEndShow:
             third=[],
             commendations=[],
         )
+        # Class 62: Dahlia
+        manager.add_judgment(
+            class_id="62",
+            first=[_lookup_contestant_id(contestants[3], "62")[0]],
+            second=[],
+            third=[],
+            commendations=[],
+        )
+        points["Dahlia"] += 3
         show_class = manager.report_class("1")
         assert tuple(show_class.first_place) == ((contestants[0], 1),)
         assert tuple(show_class.second_place) == ((contestants[1], 2),)
@@ -170,6 +182,11 @@ class TestEndToEndShow:
         assert tuple(show_class.second_place) == ()
         assert tuple(show_class.third_place) == ()
         assert tuple(show_class.commendations) == ()
+        show_class = manager.report_class("62")
+        assert tuple(show_class.first_place) == ((contestants[3], 1),)
+        assert tuple(show_class.second_place) == ()
+        assert tuple(show_class.third_place) == ()
+        assert tuple(show_class.commendations) == ()
         ranking = manager.report_ranking()
         expected_ranking = sorted(
             [
@@ -182,12 +199,19 @@ class TestEndToEndShow:
             reverse=True,
         )
         assert list(ranking) == expected_ranking
+        manual_prize = "Wonky Wooden Spoon"
+        manager.add_prize(
+            class_id="1",
+            contestant_id=_lookup_contestant_id(contestants[0], "1")[0],
+            prize=manual_prize,
+        )
+        manual_prize_str = f"{manual_prize}: {contestants[0].name}"
         overall_winner = ranking[0]
         prize = MBShield()
         overall_prize_str = f"{prize}: {overall_winner[0]}"
         winning_strings = manager.report_prizes()
         assert overall_prize_str in winning_strings
-
+        assert manual_prize_str in winning_strings
         # get repo root dir
         greenbook_dir = Path(__file__).parent.parent.parent
         test_outdir = greenbook_dir / "test-output"
@@ -202,18 +226,21 @@ class TestEndToEndShow:
         Check the contestant IDs in every class are unique.
         """
         contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"], paid=0.0),
             Contestant(
                 name="Bob Beetroot",
                 classes=["1", "2", "2", "42"],
+                paid=0.0,
             ),
             Contestant(
                 name="Carole Carrot",
                 classes=["1", "42"],
+                paid=0.1,
             ),
             Contestant(
                 name="Aunt Dahlia",
                 classes=["1", "3", "3"],
+                paid=0.30,
             ),
         ]
         registrar = get_registrar(out_dir)
@@ -237,19 +264,10 @@ class TestEndToEndShow:
         Check that the contestants IDs in each class do not change as new contestants are added.
         """
         contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
-            Contestant(
-                name="Bob Beetroot",
-                classes=["1", "2", "2", "42"],
-            ),
-            Contestant(
-                name="Carole Carrot",
-                classes=["1", "42"],
-            ),
-            Contestant(
-                name="Aunt Dahlia",
-                classes=["1", "3", "3"],
-            ),
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"], paid=0.0),
+            Contestant(name="Bob Beetroot", classes=["1", "2", "2", "42"], paid=0.0),
+            Contestant(name="Carole Carrot", classes=["1", "42"], paid=0.0),
+            Contestant(name="Aunt Dahlia", classes=["1", "3", "3"], paid=0.0),
         ]
         out_dir_single = out_dir / "single"
         out_dir_rolling = out_dir / "rolling"
@@ -269,19 +287,10 @@ class TestEndToEndShow:
 
     def test_export(self, out_dir):
         contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
-            Contestant(
-                name="Bob Beetroot",
-                classes=["1", "2", "2", "42"],
-            ),
-            Contestant(
-                name="Carole Carrot",
-                classes=["1", "42"],
-            ),
-            Contestant(
-                name="Aunt Dahlia",
-                classes=["1", "3", "3"],
-            ),
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"], paid=0.0),
+            Contestant(name="Bob Beetroot", classes=["1", "2", "2", "42"], paid=0.0),
+            Contestant(name="Carole Carrot", classes=["1", "42"], paid=0.1),
+            Contestant(name="Aunt Dahlia", classes=["1", "3", "3"], paid=0.30),
         ]
         registrar = get_registrar(out_dir)
         for contestant in contestants:

@@ -85,7 +85,10 @@ class ShowClass:
             [FIRST_PLACE_POINTS, SECOND_PLACE_POINTS, THIRD_PLACE_POINTS],
         ):
             for contestant, _ in contestants:
-                contestant_points[contestant] = contestant_points.get(contestant, 0) + points
+                if contestant not in contestant_points:
+                    contestant_points[contestant] = points
+                # otherwise, the contestant has already received points for a higher place,
+                #  so they receive no more
         return contestant_points
 
     def __str__(self) -> str:
@@ -123,8 +126,11 @@ class ShowClass:
 
 @yaml_object(yaml)
 class Show:
-    def __init__(self, classes: Sequence[ShowClass]):
+    def __init__(
+        self, classes: Sequence[ShowClass], prizes: Sequence[Tuple[Contestant, int, str]] = ()
+    ):
         self._classes = {s.class_id: s for s in classes}
+        self._prizes = prizes
         assert len(self._classes) == len(classes)
 
     def classes(self) -> Sequence[ShowClass]:
@@ -150,6 +156,9 @@ class Show:
         classes[show_class.class_id] = show_class
         return Show(list(classes.values()))
 
+    def add_prize(self, contestant: Contestant, class_id: str, prize: str) -> Show:
+        return Show(self.classes(), [*self._prizes, (contestant, class_id, prize)])
+
     def contestant_entries(
         self,
     ) -> Dict[Contestant, Sequence[Entry]]:
@@ -162,3 +171,7 @@ class Show:
                     )
                 ]
         return entries
+
+    @property
+    def prizes(self) -> Sequence[Tuple[Contestant, int, str]]:
+        return self._prizes

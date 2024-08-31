@@ -88,6 +88,14 @@ class MBShield(BasePrize):
         return winners
 
 
+class HaroldHerbertCup(HighestPointsInClasses):
+    def __init__(self):
+        super().__init__(
+            name="Harold Herbert Cup",
+            class_ids=["25B", "25B"],
+        )
+
+
 class MrsAnnPorterCup(HighestPointsInClasses):
     def __init__(self):
         super().__init__(name="Mrs Ann Porter Cup", class_ids=["16"])
@@ -107,7 +115,6 @@ class ChildrensCup(HighestPointsInClasses):
     def __init__(self):
         super().__init__(
             name="Children's Cup",
-            # TODO: this disagrees with the entry form - clarify the definition
             class_ids=[str(idx) for idx in range(70, 76)],
         )
 
