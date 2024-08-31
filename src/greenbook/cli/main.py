@@ -36,7 +36,7 @@ def get_manager(loc) -> Manager:
 
 def _handle_register(args):
     registrar = get_registrar(args.location)
-    contestant = Contestant(name=args.name, classes=args.entries, paid=args.paid)
+    contestant = Contestant(name=args.name, classes=args.entries, paid=float(args.paid))
     registrar.register(contestant, allow_update=args.allow_update)
 
 
@@ -135,6 +135,7 @@ class CLI:
         self._add_report_class(subparsers)
         self._add_final_report(subparsers)
         self._add_render_entrants(subparsers)
+        self._add_manual_prize(subparsers)
 
     def _add_registration(self, subparsers):
         parser = subparsers.add_parser("register", help="Register a new contestant.")
