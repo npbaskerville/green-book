@@ -45,7 +45,7 @@ class TestEndToEndShow:
             ),
             Contestant(
                 name="Aunt Dahlia",
-                classes=["1", "3", "3", "58A", "61", "7", "62"],
+                classes=["1", "3", "3", "58A", "61", "7", "62", "2"],
                 paid=0.0,
             ),
         ]
@@ -106,11 +106,13 @@ class TestEndToEndShow:
             class_id="42",
             first=[_lookup_contestant_id(contestants[1], "42")[0]],
             second=[_lookup_contestant_id(contestants[2], "42")[0]],
-            third=(),
+            # Dahlia's entry in class 2 was reclassified to class 42, and then she won third.
+            third=(("2", _lookup_contestant_id(contestants[3], "2")[0]),),
             commendations=(),
         )
         points["Bob"] += 3
         points["Carole"] += 2
+        points["Dahlia"] += 1
         # Class 58A: Dahlia wins
         manager.add_judgment(
             class_id="58A",
@@ -165,7 +167,8 @@ class TestEndToEndShow:
         show_class = manager.report_class("42")
         assert tuple(show_class.first_place) == ((contestants[1], 1),)
         assert tuple(show_class.second_place) == ((contestants[2], 2),)
-        assert tuple(show_class.third_place) == ()
+        # -3 signifies it was the 4th entry in class 2, but was moved to class 42
+        assert tuple(show_class.third_place) == ((contestants[3], -4),)
         assert tuple(show_class.commendations) == ()
         show_class = manager.report_class("58A")
         assert tuple(show_class.first_place) == ((contestants[3], 1),)

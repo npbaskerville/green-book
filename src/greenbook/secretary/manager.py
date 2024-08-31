@@ -1,7 +1,7 @@
 import re
 import pandas as pd
 import logging
-from typing import Dict, List, Tuple, Optional, Sequence
+from typing import Dict, List, Tuple, Union, Optional, Sequence
 from pathlib import Path
 from ruamel.yaml import YAML
 
@@ -53,16 +53,25 @@ class Manager:
     def add_judgment(
         self,
         class_id: str,
-        first: Sequence[int],
-        second: Sequence[int],
-        third: Sequence[int],
-        commendations: Sequence[int],
+        first: Sequence[Union[int, Tuple[str, int]]],
+        second: Sequence[Union[int, Tuple[str, int]]],
+        third: Sequence[Union[int, Tuple[str, int]]],
+        commendations: Sequence[Union[int, Tuple[str, int]]],
     ):
+        def _lookup(contestant: Union[int, Tuple[str, int]]) -> Tuple[Contestant, int]:
+            if isinstance(contestant, int):
+                return self.lookup_contestant(class_id, contestant), contestant
+            else:
+                other_class_id, contestant_id = contestant
+                return self.lookup_contestant(
+                    other_class_id, contestant_id
+                ), f"{other_class_id}-{contestant_id}"
+
         show_class = self._show.class_lookup(class_id)
-        first_contestants = [(self.lookup_contestant(class_id, c), c) for c in first]
-        second_contestants = [(self.lookup_contestant(class_id, c), c) for c in second]
-        third_contestants = [(self.lookup_contestant(class_id, c), c) for c in third]
-        commendation_contestants = [(self.lookup_contestant(class_id, c), c) for c in commendations]
+        first_contestants = [_lookup(c) for c in first]
+        second_contestants = [_lookup(c) for c in second]
+        third_contestants = [_lookup(c) for c in third]
+        commendation_contestants = [_lookup(c) for c in commendations]
         show_class = show_class.add_judgments(
             first=first_contestants,
             second=second_contestants,

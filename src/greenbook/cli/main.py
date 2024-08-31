@@ -5,6 +5,7 @@ The CLI module for the Greenbook application.
 import os
 import logging
 import argparse
+from typing import Tuple, Union, Sequence
 from pathlib import Path
 
 from greenbook import __version__
@@ -200,6 +201,16 @@ class CLI:
 
         parser.set_defaults(func=_handle_judge)
 
+        def place_mapper(in_val: str) -> Sequence[Union[int, Tuple[str, int]]]:
+            contestants = []
+            for contestant in in_val.split(","):
+                if ":" in contestant:
+                    class_id, contestant_id = contestant.split(":")
+                    contestants.append((class_id, int(contestant_id)))
+                else:
+                    contestants.append(int(contestant))
+            return contestants
+
         parser.add_argument(
             "--class",
             dest="class_id",
@@ -213,7 +224,7 @@ class CLI:
             dest="first",
             help="The first place contestant(s).",
             required=False,
-            type=lambda x: list(map(int, x.split(","))),
+            type=place_mapper,
             default=[],
         )
         parser.add_argument(
@@ -221,7 +232,7 @@ class CLI:
             dest="second",
             help="The second place contestant(s).",
             required=False,
-            type=lambda x: list(map(int, x.split(","))),
+            type=place_mapper,
             default=[],
         )
         parser.add_argument(
@@ -229,7 +240,7 @@ class CLI:
             dest="third",
             help="The third place contestant(s).",
             required=False,
-            type=lambda x: list(map(int, x.split(","))),
+            type=place_mapper,
             default=[],
         )
         parser.add_argument(
@@ -237,7 +248,7 @@ class CLI:
             dest="commendations",
             help="The commended contestant(s).",
             required=False,
-            type=lambda x: list(map(int, x.split(","))),
+            type=place_mapper,
             default=[],
         )
 
