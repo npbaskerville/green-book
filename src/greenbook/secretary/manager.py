@@ -74,6 +74,13 @@ class Manager:
             yaml.dump(self._show, f)
             _LOG.info(f"Added judgments to class {class_id}")
 
+    def add_prize(self, prize: str, class_id: str, contestant_id: int):
+        contestant = self.lookup_contestant(class_id, contestant_id)
+        self._show = self._show.add_prize(prize=prize, class_id=class_id, contestant=contestant)
+        with self._ledger_loc.open("w") as f:
+            yaml.dump(self._show, f)
+            _LOG.info(f"Added prize {prize} to contestant {contestant_id} in class {class_id}")
+
     def lookup_contestant(self, class_id: str, contestant_id: int) -> Contestant:
         return self._show.class_lookup(class_id).entry_lookup(contestant_id)
 
@@ -85,6 +92,11 @@ class Manager:
             winner_str = ", ".join([str(w) for w in sorted(winners)])
             winning_strings.append(f"{prize}: {winner_str}")
             print(f"{prize}: {winner_str}")
+        for prize in self._show.prizes:
+            contestant, _, prize_name = prize
+            winner_str = f"{prize_name}: {contestant.name}"
+            winning_strings.append(winner_str)
+            print(winner_str)
         _LOG.info("Completed prize report.")
         return winning_strings
 

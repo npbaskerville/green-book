@@ -58,6 +58,15 @@ def _handle_judge(args):
     )
 
 
+def _handle_manual_prize(args):
+    manager = get_manager(args.location)
+    manager.add_prize(
+        class_id=args.class_id,
+        contestant_id=args.contestant_id,
+        prize=args.prize,
+    )
+
+
 def _handle_lookup(args):
     manager = get_manager(args.location)
     contestant = manager.lookup_contestant(class_id=args.class_id, contestant_id=args.contestant_id)
@@ -215,6 +224,38 @@ class CLI:
             required=False,
             type=lambda x: list(map(int, x.split(","))),
             default=[],
+        )
+
+    def _add_manual_prize(self, subparsers):
+        parser = subparsers.add_parser(
+            "manual_prize",
+            help="Add a prize to a contestant in a class.",
+        )
+
+        parser.set_defaults(func=_handle_manual_prize)
+
+        parser.add_argument(
+            "--class",
+            dest="class_id",
+            help="The class being judged.",
+            required=True,
+            type=str,
+        )
+
+        parser.add_argument(
+            "--contestant_id",
+            dest="contestant_id",
+            help="The contestant being judged.",
+            required=True,
+            type=int,
+        )
+
+        parser.add_argument(
+            "--prize",
+            dest="prize",
+            help="The prize being awarded.",
+            required=True,
+            type=str,
         )
 
     def _add_lookup(self, subparsers):

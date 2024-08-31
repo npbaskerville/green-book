@@ -199,12 +199,19 @@ class TestEndToEndShow:
             reverse=True,
         )
         assert list(ranking) == expected_ranking
+        manual_prize = "Wonky Wooden Spoon"
+        manager.add_prize(
+            class_id="1",
+            contestant_id=_lookup_contestant_id(contestants[0], "1")[0],
+            prize=manual_prize,
+        )
+        manual_prize_str = f"{manual_prize}: {contestants[0].name}"
         overall_winner = ranking[0]
         prize = MBShield()
         overall_prize_str = f"{prize}: {overall_winner[0]}"
         winning_strings = manager.report_prizes()
         assert overall_prize_str in winning_strings
-
+        assert manual_prize_str in winning_strings
         # get repo root dir
         greenbook_dir = Path(__file__).parent.parent.parent
         test_outdir = greenbook_dir / "test-output"
