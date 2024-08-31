@@ -86,6 +86,7 @@ greenbook  --location /Users/nick/green-book-testing-29aug judge --class 68 --fi
 greenbook  --location /Users/nick/green-book-testing-29aug judge --class 70 --first=1
 greenbook  --location /Users/nick/green-book-testing-29aug judge --class 72 --first=1
 
+greenbook --location /Users/nick/green-book-testing-29aug manual_prize --class 65 --contestant_id 2 --prize "Wonky Wooden Spoon"
 
 # final
 greenbook  --location /Users/nick/green-book-testing-29aug final_report
