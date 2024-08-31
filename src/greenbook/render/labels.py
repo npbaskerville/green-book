@@ -34,7 +34,7 @@ def render_entries(contestant_name: str, entries: Sequence[Entry], price: float)
             y = 0.95
             x += 0.22
     ax.axis("off")
-    ax.set_title(f"Entries for {contestant_name} (£{price:.2f})")
+    ax.set_title(f"Entries for {contestant_name} (due: £{price:.2f})")
     return fig
 
 

@@ -10,7 +10,6 @@ from greenbook.data.consts import MAX_ENTRIES_PER_CONTESTANT
 from greenbook.definitions.classes import FLAT_CLASSES
 
 yaml = YAML()
-
 HASH_LEN = 8
 
 
@@ -19,6 +18,7 @@ HASH_LEN = 8
 class Contestant:
     name: str = attrib(type=str)
     classes: Sequence[str] = attrib(type=Sequence[str])
+    paid: float = attrib(type=float)
 
     def __post_init__(self):
         n_entries_per_class = Counter(self.classes)
@@ -27,9 +27,13 @@ class Contestant:
         for c in self.classes:
             if c not in FLAT_CLASSES:
                 raise ValueError(f"Unknown class {c}")
+        assert self.paid >= 0.0
 
     def unique_id(self) -> str:
         hash_data = self.name + "-".join(str(c) for c in sorted(self.classes))
+        # Intentionally ignore the paid value, since a name and a sequence of classes
+        # defines an entrant. We do not want to silently accept two identical contestants
+        # with different paid values.
         byte_like = pickle.dumps(hash_data)
         return hashlib.blake2b(byte_like, digest_size=HASH_LEN // 2).hexdigest()
 

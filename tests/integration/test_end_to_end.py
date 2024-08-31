@@ -32,18 +32,21 @@ class TestEndToEndShow:
 
     def test_basic_winners(self, out_dir):
         contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3", "7"]),
+            Contestant(name="Alice Appleby", classes=["1", "2", "3", "7"], paid=0.0),
             Contestant(
                 name="Bob Beetroot",
                 classes=["1", "2", "2", "42"],
+                paid=0.0,
             ),
             Contestant(
                 name="Carole Carrot",
                 classes=["1", "42", "61", "7"],
+                paid=0.0,
             ),
             Contestant(
                 name="Aunt Dahlia",
                 classes=["1", "3", "3", "58A", "61", "7", "62"],
+                paid=0.0,
             ),
         ]
         registrar = get_registrar(out_dir)
@@ -216,18 +219,21 @@ class TestEndToEndShow:
         Check the contestant IDs in every class are unique.
         """
         contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"], paid=0.0),
             Contestant(
                 name="Bob Beetroot",
                 classes=["1", "2", "2", "42"],
+                paid=0.0,
             ),
             Contestant(
                 name="Carole Carrot",
                 classes=["1", "42"],
+                paid=0.1,
             ),
             Contestant(
                 name="Aunt Dahlia",
                 classes=["1", "3", "3"],
+                paid=0.30,
             ),
         ]
         registrar = get_registrar(out_dir)
@@ -251,19 +257,10 @@ class TestEndToEndShow:
         Check that the contestants IDs in each class do not change as new contestants are added.
         """
         contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
-            Contestant(
-                name="Bob Beetroot",
-                classes=["1", "2", "2", "42"],
-            ),
-            Contestant(
-                name="Carole Carrot",
-                classes=["1", "42"],
-            ),
-            Contestant(
-                name="Aunt Dahlia",
-                classes=["1", "3", "3"],
-            ),
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"], paid=0.0),
+            Contestant(name="Bob Beetroot", classes=["1", "2", "2", "42"], paid=0.0),
+            Contestant(name="Carole Carrot", classes=["1", "42"], paid=0.0),
+            Contestant(name="Aunt Dahlia", classes=["1", "3", "3"], paid=0.0),
         ]
         out_dir_single = out_dir / "single"
         out_dir_rolling = out_dir / "rolling"
@@ -283,19 +280,10 @@ class TestEndToEndShow:
 
     def test_export(self, out_dir):
         contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
-            Contestant(
-                name="Bob Beetroot",
-                classes=["1", "2", "2", "42"],
-            ),
-            Contestant(
-                name="Carole Carrot",
-                classes=["1", "42"],
-            ),
-            Contestant(
-                name="Aunt Dahlia",
-                classes=["1", "3", "3"],
-            ),
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"], paid=0.0),
+            Contestant(name="Bob Beetroot", classes=["1", "2", "2", "42"], paid=0.0),
+            Contestant(name="Carole Carrot", classes=["1", "42"], paid=0.1),
+            Contestant(name="Aunt Dahlia", classes=["1", "3", "3"], paid=0.30),
         ]
         registrar = get_registrar(out_dir)
         for contestant in contestants:

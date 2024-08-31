@@ -133,6 +133,7 @@ class Manager:
             for entry in entries:
                 if CLASS_ID_TO_SECTION[entry.class_id] not in FREE_CLASSES:
                     price += ENTRY_COST
+            price -= contestant.paid
             render_contestant_to_file(contestant.name, entries, directory, price=price)
 
     def render_final_report(self, directory: Path):
