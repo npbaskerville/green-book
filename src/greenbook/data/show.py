@@ -85,7 +85,7 @@ class ShowClass:
             [FIRST_PLACE_POINTS, SECOND_PLACE_POINTS, THIRD_PLACE_POINTS],
         ):
             for contestant, _ in contestants:
-                if contestant not in self.contestants:
+                if contestant not in contestant_points:
                     contestant_points[contestant] = points
                 # otherwise, the contestant has already received points for a higher place,
                 #  so they receive no more
