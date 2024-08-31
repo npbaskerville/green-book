@@ -7,7 +7,7 @@ from datetime import datetime
 from collections import defaultdict
 
 from greenbook.cli.main import get_manager, get_registrar
-from greenbook.data.entries import Contestant
+from greenbook.data.entries import Contestant, DeletedContestant
 from greenbook.definitions.prizes import MBShield
 from greenbook.definitions.classes import FLAT_CLASSES
 
@@ -271,16 +271,17 @@ class TestEndToEndShow:
         ]
         out_dir_single = out_dir / "single"
         out_dir_rolling = out_dir / "rolling"
-        registrar_rolling = get_registrar(out_dir_single)
+        registrar_rolling = get_registrar(out_dir_rolling)
         for contestant in contestants:
             registrar_rolling.register(contestant)
-            manager = get_manager(out_dir_single)
+            manager = get_manager(out_dir_rolling)
             manager.allocate(registrar_rolling.contestants())
         contestant_entries_rolling = manager.contestant_entries()
-        registrar_single = get_registrar(out_dir_rolling)
+
+        registrar_single = get_registrar(out_dir_single)
         for contestant in contestants:
             registrar_single.register(contestant)
-        manager = get_manager(out_dir_rolling)
+        manager = get_manager(out_dir_single)
         manager.allocate(registrar_single.contestants())
         contestant_entries_single = manager.contestant_entries()
         assert contestant_entries_rolling == contestant_entries_single
@@ -319,3 +320,41 @@ class TestEndToEndShow:
         ):
             for idx, col in locs:
                 assert df.loc[idx, col] == name
+
+    def test_registration_with_deletes(self, out_dir):
+        """
+        Check that the contestant IDs are not changes by deletion of other contestants.
+        """
+        contestants = [
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"], paid=0.0),
+            Contestant(name="Bob Beetroot", classes=["1", "2", "2", "42"], paid=0.0),
+            Contestant(name="Carole Carrot", classes=["1", "42"], paid=0.0),
+            Contestant(name="Aunt Dahlia", classes=["1", "3", "3"], paid=0.0),
+        ]
+        out_dir_single = out_dir / "single"
+        out_dir_del = out_dir / "delete"
+        registrar_del = get_registrar(out_dir_del)
+        for contestant in contestants:
+            registrar_del.register(contestant)
+        manager = get_manager(out_dir_del)
+        manager.allocate(registrar_del.contestants())
+        delete = "Bob Beetroot"
+        registrar_del.delete_contestant(delete)
+        manager.allocate(registrar_del.contestants())
+        contestant_entries_del = manager.contestant_entries()
+
+        registrar_single = get_registrar(out_dir_single)
+        for contestant in contestants:
+            registrar_single.register(contestant)
+        manager = get_manager(out_dir_single)
+        manager.allocate(registrar_single.contestants())
+        contestant_entries_single = manager.contestant_entries()
+
+        for contestant in contestant_entries_del:
+            if not isinstance(contestant, DeletedContestant):
+                assert contestant_entries_del[contestant] == contestant_entries_single[contestant]
+                assert contestant.name != delete
+            else:
+                assert contestant.name == f"DELETED ({delete})"
+        assert delete in [c.name for c in contestant_entries_single]
+        assert not any(isinstance(c, DeletedContestant) for c in contestant_entries_single)
