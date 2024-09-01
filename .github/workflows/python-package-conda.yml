@@ -21,7 +21,8 @@ jobs:
     - name: Install dependencies
       run: |
         pip install conda-lock
-        conda-lock install -f environment.yml
+        conda-lock install
+        conda activate green-book
         pip install -e .
 
     - name: Test with pytest
