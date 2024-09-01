@@ -23,7 +23,7 @@ jobs:
         pip install conda-lock
         conda-lock install -n green-book
         conda init
-        source ~/.bashrc
+        source /home/runner/.bashrc
         conda activate green-book
         pip install -e .
 
