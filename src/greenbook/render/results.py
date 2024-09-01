@@ -17,8 +17,8 @@ def render_class_results(class_results: Sequence[Tuple[str, str, pd.DataFrame]],
             ax.axis("off")
             ax.table(cellText=df.values, colLabels=df.columns, rowLabels=df.index, loc="center")
             ax.set_title(f"Results for class {class_id} --- {class_name}")
-            pp.savefig(fig)
             plt.close(fig)
+            pp.savefig(fig)
 
 
 def render_prizes(prize_results: Sequence[str], directory: Path):
