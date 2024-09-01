@@ -23,8 +23,7 @@ jobs:
         pip install conda-lock
         conda-lock install -n green-book
         conda info
-        $CONDA/bin/activate green-book
-        pip install -e . --no-deps
+        conda run -n green-book pip install -e . --no-deps
 
     - name: Test with pytest
       run: |
