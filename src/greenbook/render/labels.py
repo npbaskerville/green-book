@@ -1,8 +1,11 @@
 import matplotlib.pyplot as plt
 from typing import Sequence
 from pathlib import Path
+from matplotlib.backends.backend_pdf import PdfPages
 
 from greenbook.data.show import Entry
+
+MAX_PER_PAGE = 24
 
 
 def render_entries(contestant_name: str, entries: Sequence[Entry], price: float) -> plt.Figure:
@@ -32,7 +35,7 @@ def render_entries(contestant_name: str, entries: Sequence[Entry], price: float)
         y -= 0.15
         if y < 0.1:
             y = 0.95
-            x += 0.22
+            x += 0.27
     ax.axis("off")
     ax.set_title(f"Entries for {contestant_name} (due: £{price:.2f})")
     return fig
@@ -42,7 +45,11 @@ def render_contestant_to_file(
     contestant_name: str, entries: Sequence[Entry], directory: Path, price: float
 ):
     directory.mkdir(parents=True, exist_ok=True)
-    fig = render_entries(contestant_name, entries, price)
-    filename = directory / f"{contestant_name}.png"
-    fig.savefig(filename)
-    plt.close(fig)
+    filename = directory / f"{contestant_name}.pdf"
+    remaining_entries = list(entries)
+    with PdfPages(filename) as pp:
+        while remaining_entries:
+            fig = render_entries(contestant_name, remaining_entries[:MAX_PER_PAGE], price)
+            pp.savefig(fig)
+            plt.close(fig)
+            remaining_entries = remaining_entries[MAX_PER_PAGE:]
