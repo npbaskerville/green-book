@@ -61,6 +61,7 @@ class TestCLI:
                 *base_cli_invocation,
                 "manual_prize",
                 "--contestant_id=1",
+                "--class=1",
                 "--prize=Wonky Wooden Spoon",
             ],
         ]
