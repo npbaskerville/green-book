@@ -20,6 +20,7 @@ jobs:
         echo $CONDA/bin >> $GITHUB_PATH
     - name: Install dependencies
       run: |
+        pip install conda-lock
         conda-lock install -f environment.yml
         pip install -e .
 
