@@ -58,9 +58,9 @@ class Manager:
         third: Sequence[Union[int, Tuple[str, int]]],
         commendations: Sequence[Union[int, Tuple[str, int]]],
     ):
-        def _lookup(contestant: Union[int, Tuple[str, int]]) -> Tuple[Contestant, str]:
+        def _lookup(contestant: Union[int, Tuple[str, int]]) -> Tuple[Contestant, Union[int, str]]:
             if isinstance(contestant, int):
-                return self.lookup_contestant(class_id, contestant), str(contestant)
+                return self.lookup_contestant(class_id, contestant), contestant
             else:
                 other_class_id, contestant_id = contestant
                 return self.lookup_contestant(
