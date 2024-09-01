@@ -168,7 +168,7 @@ class TestEndToEndShow:
         assert tuple(show_class.first_place) == ((contestants[1], 1),)
         assert tuple(show_class.second_place) == ((contestants[2], 2),)
         # -3 signifies it was the 4th entry in class 2, but was moved to class 42
-        assert tuple(show_class.third_place) == ((contestants[3], -4),)
+        assert tuple(show_class.third_place) == ((contestants[3], "2-4"),)
         assert tuple(show_class.commendations) == ()
         show_class = manager.report_class("58A")
         assert tuple(show_class.first_place) == ((contestants[3], 1),)

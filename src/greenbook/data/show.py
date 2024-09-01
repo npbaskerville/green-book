@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 from attr import attrib
-from typing import Dict, Tuple, Optional, Sequence
+from typing import Dict, Tuple, Union, Optional, Sequence
 from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
 
@@ -59,10 +59,10 @@ class ShowClass:
 
     def add_judgments(
         self,
-        first: Sequence[Tuple[Contestant, int]],
-        second: Sequence[Tuple[Contestant, int]],
-        third: Sequence[Tuple[Contestant, int]],
-        commendations: Sequence[Tuple[Contestant, int]],
+        first: Sequence[Tuple[Contestant, Union[int, str]]],
+        second: Sequence[Tuple[Contestant, Union[int, str]]],
+        third: Sequence[Tuple[Contestant, Union[int, str]]],
+        commendations: Sequence[Tuple[Contestant, Union[int, str]]],
     ) -> ShowClass:
         return ShowClass(
             class_id=self.class_id,
