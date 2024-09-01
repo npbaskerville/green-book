@@ -5,7 +5,7 @@ from matplotlib.backends.backend_pdf import PdfPages
 
 from greenbook.data.show import Entry
 
-MAX_PER_PAGE = 24
+MAX_PER_PAGE = 28
 
 
 def render_entries(contestant_name: str, entries: Sequence[Entry], price: float) -> plt.Figure:
@@ -33,7 +33,7 @@ def render_entries(contestant_name: str, entries: Sequence[Entry], price: float)
             ),
         )
         y -= 0.15
-        if y < 0.1:
+        if y < 0:
             y = 0.95
             x += 0.27
     ax.axis("off")
