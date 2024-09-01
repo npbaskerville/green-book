@@ -21,7 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install conda-lock
-        conda-lock install
+        conda-lock install -n green-book
         conda activate green-book
         pip install -e .
 
