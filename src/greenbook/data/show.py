@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 from attr import attrib
-from typing import Dict, Tuple, Optional, Sequence
+from typing import Dict, Tuple, Union, Optional, Sequence
 from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
 
@@ -59,10 +59,10 @@ class ShowClass:
 
     def add_judgments(
         self,
-        first: Sequence[Tuple[Contestant, int]],
-        second: Sequence[Tuple[Contestant, int]],
-        third: Sequence[Tuple[Contestant, int]],
-        commendations: Sequence[Tuple[Contestant, int]],
+        first: Sequence[Tuple[Contestant, Union[int, str]]],
+        second: Sequence[Tuple[Contestant, Union[int, str]]],
+        third: Sequence[Tuple[Contestant, Union[int, str]]],
+        commendations: Sequence[Tuple[Contestant, Union[int, str]]],
     ) -> ShowClass:
         return ShowClass(
             class_id=self.class_id,
@@ -103,20 +103,30 @@ class ShowClass:
         second_tuples = [tuple(c) for c in self.second_place]
         third_tuples = [tuple(c) for c in self.third_place]
         commendation_tuples = [tuple(c) for c in self.commendations]
-        for i, contestant in enumerate(self.contestants):
+        for contestant, contestant_id in first_tuples:
             df_data["name"].append(contestant.name)
-            contetant_id = i + 1
-            df_data["entry"].append(contetant_id)
-            if (contestant, contetant_id) in first_tuples:
-                df_data["place"].append("1st")
-            elif (contestant, contetant_id) in second_tuples:
-                df_data["place"].append("2nd")
-            elif (contestant, contetant_id) in third_tuples:
-                df_data["place"].append("3rd")
-            elif (contestant, contetant_id) in commendation_tuples:
-                df_data["place"].append("Commendation")
-            else:
+            df_data["entry"].append(contestant_id)
+            df_data["place"].append("1st")
+        for contestant, contestant_id in second_tuples:
+            df_data["name"].append(contestant.name)
+            df_data["entry"].append(contestant_id)
+            df_data["place"].append("2nd")
+        for contestant, contestant_id in third_tuples:
+            df_data["name"].append(contestant.name)
+            df_data["entry"].append(contestant_id)
+            df_data["place"].append("3rd")
+        for contestant, contestant_id in commendation_tuples:
+            df_data["name"].append(contestant.name)
+            df_data["entry"].append(contestant_id)
+            df_data["place"].append("Commendation")
+
+        seen = {*first_tuples, *second_tuples, *third_tuples, *commendation_tuples}
+        for i, contestant in enumerate(self.contestants):
+            if (contestant, i + 1) not in seen:
+                df_data["name"].append(contestant.name)
+                df_data["entry"].append(i + 1)
                 df_data["place"].append(None)
+
         df = pd.DataFrame(df_data)
         # change place to int type
         df["place"] = df["place"].astype("str")

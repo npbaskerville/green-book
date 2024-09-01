@@ -24,19 +24,10 @@ class TestRegistrar:
 
     def test_export(self, out_dir):
         contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3"]),
-            Contestant(
-                name="Bob Beetroot",
-                classes=["1", "2", "2", "42"],
-            ),
-            Contestant(
-                name="Carole Carrot",
-                classes=["1", "42"],
-            ),
-            Contestant(
-                name="Aunt Dahlia",
-                classes=["1", "3", "3"],
-            ),
+            Contestant(name="Alice Appleby", classes=["1", "2", "3"], paid=0.0),
+            Contestant(name="Bob Beetroot", classes=["1", "2", "2", "42"], paid=0.0),
+            Contestant(name="Carole Carrot", classes=["1", "42"], paid=0.0),
+            Contestant(name="Aunt Dahlia", classes=["1", "3", "3"], paid=0.0),
         ]
         registrar = get_registrar(out_dir)
         for contestant in contestants:

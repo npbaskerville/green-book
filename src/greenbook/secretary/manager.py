@@ -1,12 +1,12 @@
 import re
 import pandas as pd
 import logging
-from typing import Dict, List, Tuple, Optional, Sequence
+from typing import Dict, List, Tuple, Union, Optional, Sequence
 from pathlib import Path
 from ruamel.yaml import YAML
 
 from greenbook.data.show import Show, Entry, ShowClass
-from greenbook.data.entries import Contestant
+from greenbook.data.entries import Contestant, DeletedContestant
 from greenbook.render.labels import render_contestant_to_file
 from greenbook.render.results import render_prizes, render_ranking, render_class_results
 from greenbook.definitions.prices import ENTRY_COST, FREE_CLASSES
@@ -53,16 +53,25 @@ class Manager:
     def add_judgment(
         self,
         class_id: str,
-        first: Sequence[int],
-        second: Sequence[int],
-        third: Sequence[int],
-        commendations: Sequence[int],
+        first: Sequence[Union[int, Tuple[str, int]]],
+        second: Sequence[Union[int, Tuple[str, int]]],
+        third: Sequence[Union[int, Tuple[str, int]]],
+        commendations: Sequence[Union[int, Tuple[str, int]]],
     ):
+        def _lookup(contestant: Union[int, Tuple[str, int]]) -> Tuple[Contestant, Union[int, str]]:
+            if isinstance(contestant, int):
+                return self.lookup_contestant(class_id, contestant), contestant
+            else:
+                other_class_id, contestant_id = contestant
+                return self.lookup_contestant(
+                    other_class_id, contestant_id
+                ), f"{other_class_id}-{contestant_id}"
+
         show_class = self._show.class_lookup(class_id)
-        first_contestants = [(self.lookup_contestant(class_id, c), c) for c in first]
-        second_contestants = [(self.lookup_contestant(class_id, c), c) for c in second]
-        third_contestants = [(self.lookup_contestant(class_id, c), c) for c in third]
-        commendation_contestants = [(self.lookup_contestant(class_id, c), c) for c in commendations]
+        first_contestants = [_lookup(c) for c in first]
+        second_contestants = [_lookup(c) for c in second]
+        third_contestants = [_lookup(c) for c in third]
+        commendation_contestants = [_lookup(c) for c in commendations]
         show_class = show_class.add_judgments(
             first=first_contestants,
             second=second_contestants,
@@ -141,6 +150,8 @@ class Manager:
 
     def render_contestants(self, directory: Path):
         for contestant, entries in self.contestant_entries().items():
+            if isinstance(contestant, DeletedContestant):
+                continue
             price = 0.0
             for entry in entries:
                 if CLASS_ID_TO_SECTION[entry.class_id] not in FREE_CLASSES:

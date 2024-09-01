@@ -58,3 +58,10 @@ class Contestant:
 
     def __le__(self, other):
         return self.name <= other.name
+
+
+@yaml_object(yaml)
+class DeletedContestant(Contestant):
+    def __post_init__(self):
+        super().__post_init__()
+        assert self.name.startswith("DELETED (")

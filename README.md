@@ -35,7 +35,7 @@ judge --class 42 --first=31, --second=14,27 --commendations=50
 ### Full worked example
 ```angular2html
 # register
-greenbook  --location /Users/nick/green-book-testing-29aug register --name "Aunt Dahlia" --entries=35,4,5,39,40,41,42,43,44,45,53,65,65
+greenbook  --location /Users/nick/green-book-testing-29aug register --name "Aunt Dahlia" --entries=4,5,39,40,41,42,43,45,53,65 --paid 0.5
 greenbook  --location /Users/nick/green-book-testing-29aug register --name "Bettie Beetroot" --entries=1,2,2,5,17,35,47,56,56,65
 greenbook  --location /Users/nick/green-book-testing-29aug register --name "Major Marrow" --entries=21,22,30,33,39,40,41,42,43,44,45,46,47,68
 greenbook  --location /Users/nick/green-book-testing-29aug register --name "Sean Shortbread" --entries=25A,21,22,30,44,59
@@ -44,6 +44,11 @@ greenbook  --location /Users/nick/green-book-testing-29aug register --name "Will
 greenbook  --location /Users/nick/green-book-testing-29aug register --name "Baby Carrot" --entries=70,72
 
 # run this any time to get entry slips
+greenbook  --location /Users/nick/green-book-testing-29aug allocate
+
+# To ammend an entrant:
+greenbook  --location /Users/nick/green-book-testing-29aug  delete --name "Aunt Dahlia"
+greenbook  --location /Users/nick/green-book-testing-29aug register --name "Aunt Dahlia" --entries=35,4,5,39,40,41,42,43,44,45,53,65,65 --paid 0.5
 greenbook  --location /Users/nick/green-book-testing-29aug allocate
 
 
@@ -86,6 +91,7 @@ greenbook  --location /Users/nick/green-book-testing-29aug judge --class 68 --fi
 greenbook  --location /Users/nick/green-book-testing-29aug judge --class 70 --first=1
 greenbook  --location /Users/nick/green-book-testing-29aug judge --class 72 --first=1
 
+greenbook --location /Users/nick/green-book-testing-29aug manual_prize --class 65 --contestant_id 2 --prize "Wonky Wooden Spoon"
 
 # final
 greenbook  --location /Users/nick/green-book-testing-29aug final_report

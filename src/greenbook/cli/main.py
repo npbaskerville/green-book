@@ -5,6 +5,7 @@ The CLI module for the Greenbook application.
 import os
 import logging
 import argparse
+from typing import Tuple, Union, Sequence
 from pathlib import Path
 
 from greenbook import __version__
@@ -38,6 +39,11 @@ def _handle_register(args):
     registrar = get_registrar(args.location)
     contestant = Contestant(name=args.name, classes=args.entries, paid=float(args.paid))
     registrar.register(contestant, allow_update=args.allow_update)
+
+
+def _handle_delete(args):
+    registrar = get_registrar(args.location)
+    registrar.delete_contestant(args.name)
 
 
 def _handle_allocate(args):
@@ -136,6 +142,7 @@ class CLI:
         self._add_final_report(subparsers)
         self._add_render_entrants(subparsers)
         self._add_manual_prize(subparsers)
+        self._add_delete(subparsers)
 
     def _add_registration(self, subparsers):
         parser = subparsers.add_parser("register", help="Register a new contestant.")
@@ -170,6 +177,14 @@ class CLI:
             default=0.0,
         )
 
+    def _add_delete(self, subparsers):
+        parser = subparsers.add_parser("delete", help="Delete a contestant.")
+        parser.set_defaults(func=_handle_delete)
+
+        parser.add_argument(
+            "--name", dest="name", help="The name of the contestant.", required=True
+        )
+
     def _add_allocation(self, subparsers):
         parser = subparsers.add_parser(
             "allocate",
@@ -186,6 +201,16 @@ class CLI:
 
         parser.set_defaults(func=_handle_judge)
 
+        def place_mapper(in_val: str) -> Sequence[Union[int, Tuple[str, int]]]:
+            contestants = []
+            for contestant in in_val.split(","):
+                if ":" in contestant:
+                    class_id, contestant_id = contestant.split(":")
+                    contestants.append((class_id, int(contestant_id)))
+                else:
+                    contestants.append(int(contestant))
+            return contestants
+
         parser.add_argument(
             "--class",
             dest="class_id",
@@ -199,7 +224,7 @@ class CLI:
             dest="first",
             help="The first place contestant(s).",
             required=False,
-            type=lambda x: list(map(int, x.split(","))),
+            type=place_mapper,
             default=[],
         )
         parser.add_argument(
@@ -207,7 +232,7 @@ class CLI:
             dest="second",
             help="The second place contestant(s).",
             required=False,
-            type=lambda x: list(map(int, x.split(","))),
+            type=place_mapper,
             default=[],
         )
         parser.add_argument(
@@ -215,7 +240,7 @@ class CLI:
             dest="third",
             help="The third place contestant(s).",
             required=False,
-            type=lambda x: list(map(int, x.split(","))),
+            type=place_mapper,
             default=[],
         )
         parser.add_argument(
@@ -223,7 +248,7 @@ class CLI:
             dest="commendations",
             help="The commended contestant(s).",
             required=False,
-            type=lambda x: list(map(int, x.split(","))),
+            type=place_mapper,
             default=[],
         )
 
