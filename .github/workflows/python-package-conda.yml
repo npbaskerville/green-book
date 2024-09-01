@@ -28,4 +28,5 @@ jobs:
 
     - name: Test with pytest
       run: |
+        $CONDA/bin/activate green-book
         pytest tests/
