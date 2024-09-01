@@ -22,9 +22,8 @@ jobs:
       run: |
         pip install conda-lock
         conda-lock install -n green-book
-        conda init
-        source /home/runner/.bashrc
-        conda activate green-book
+        conda info
+        $CONDA/bin/activate green-book
         pip install -e .
 
     - name: Test with pytest
