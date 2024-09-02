@@ -22,7 +22,9 @@ CLASSES: Dict[str, Sequence[Tuple[str, str]]] = {
         ("17", "Container of Mixed Vegetables"),
     ],
     "B": [
-        ("18", "Apples,Dessert 19 Apples,Culinary 20 Plums"),
+        ("18", "Apples,Dessert"),
+        ("19", "Apples,Culinary"),
+        ("20", "Plums"),
         ("21", "Damsons"),
         ("22", "Pears"),
         ("23", "Soft Fruits"),
