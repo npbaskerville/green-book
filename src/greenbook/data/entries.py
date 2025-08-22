@@ -1,5 +1,7 @@
 import pickle
 import hashlib
+
+import pandas as pd
 from attr import attrib
 from typing import Sequence
 from collections import Counter
@@ -65,3 +67,10 @@ class DeletedContestant(Contestant):
     def __post_init__(self):
         super().__post_init__()
         assert self.name.startswith("DELETED (")
+
+
+@dataclass
+class ContestantData:
+    name: str = attrib()
+    entries_df: pd.DataFrame = attrib()
+    paid: float = attrib()
