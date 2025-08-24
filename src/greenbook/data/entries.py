@@ -1,3 +1,4 @@
+import pandas as pd
 import pickle
 import hashlib
 from attr import attrib
@@ -43,11 +44,11 @@ class Contestant:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Contestant):
             return False
-        return self.unique_id == other.unique_id
+        return self.unique_id() == other.unique_id()
 
     def __lt__(self, other) -> bool:
         if self.name == other.name:
-            return self.unique_id < other.unique_id
+            return self.unique_id() < other.unique_id()
         return self.name < other.name
 
     def __str__(self) -> str:
@@ -65,3 +66,15 @@ class DeletedContestant(Contestant):
     def __post_init__(self):
         super().__post_init__()
         assert self.name.startswith("DELETED (")
+
+
+@dataclass
+class ContestantData:
+    entries_df: pd.DataFrame = attrib()
+    paid: float = attrib()
+
+
+@dataclass
+class AllocatedContestant:
+    contestant: Contestant = attrib()
+    entries_df: pd.DataFrame = attrib()

@@ -3,10 +3,11 @@ import pandas as pd
 import logging
 from typing import Dict, List, Tuple, Union, Optional, Sequence
 from pathlib import Path
+from collections import defaultdict
 from ruamel.yaml import YAML
 
 from greenbook.data.show import Show, Entry, ShowClass
-from greenbook.data.entries import Contestant, DeletedContestant
+from greenbook.data.entries import Contestant, DeletedContestant, AllocatedContestant
 from greenbook.render.labels import render_contestant_to_file
 from greenbook.render.results import render_prizes, render_ranking, render_class_results
 from greenbook.definitions.prices import ENTRY_COST, FREE_CLASSES
@@ -26,18 +27,24 @@ class Manager:
             with self._ledger_loc.open("r") as f:
                 self._show = yaml.load(f)
 
-    def allocate(self, contestants: Sequence[Contestant]):
-        grouped_by_class: Dict[str, List[Contestant]] = {}
-        for contestant in contestants:
-            for class_id in contestant.classes:
-                if class_id not in grouped_by_class:
-                    grouped_by_class[class_id] = []
-                grouped_by_class[class_id].append(contestant)
+    def allocate(self, contestants: Sequence[AllocatedContestant]):
+        grouped_by_class: Dict[str, List[Tuple[int, Contestant]]] = defaultdict(list)
+        for allocated_contestant in contestants:
+            contestant = allocated_contestant.contestant
+            entries_df = allocated_contestant.entries_df
+            for class_id in entries_df.columns:
+                for class_entry_idx in entries_df[class_id].values:
+                    if class_entry_idx > 0:
+                        grouped_by_class[class_id].append((class_entry_idx, contestant))
+        ordered_contestants: Dict[str, List[Contestant]] = {}
+        for class_id, entries in grouped_by_class.items():
+            sorted_contestant = sorted(entries, key=lambda entry: entry[0])
+            ordered_contestants[class_id] = [cont for _, cont in sorted_contestant]
         classes = [
             ShowClass(
                 class_id=class_id,
                 name=FLAT_CLASSES[class_id],
-                contestants=grouped_by_class[class_id],
+                contestants=ordered_contestants[class_id],
                 first_place=[],
                 second_place=[],
                 third_place=[],

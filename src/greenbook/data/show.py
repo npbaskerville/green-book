@@ -74,7 +74,7 @@ class ShowClass:
             commendations=commendations,
         )
 
-    def points(self) -> Dict[Contestant:int]:
+    def points(self) -> Dict[Contestant, int]:
         contestant_points = {}
         for contestants, points in zip(
             [

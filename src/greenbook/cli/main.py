@@ -24,7 +24,7 @@ _LOG = logging.getLogger(__name__)
 
 
 def get_registrar(loc) -> Registrar:
-    location = Path(loc) / "contestants.yaml"
+    location = Path(loc) / "contestants.csv"
     location.parent.mkdir(parents=True, exist_ok=True)
     return Registrar(ledger_loc=location)
 
@@ -38,19 +38,7 @@ def get_manager(loc) -> Manager:
 def _handle_register(args):
     registrar = get_registrar(args.location)
     contestant = Contestant(name=args.name, classes=args.entries, paid=float(args.paid))
-    registrar.register(contestant, allow_update=args.allow_update)
-
-
-def _handle_delete(args):
-    registrar = get_registrar(args.location)
-    registrar.delete_contestant(args.name)
-
-
-def _handle_allocate(args):
-    registrar = get_registrar(args.location)
-    manager = get_manager(args.location)
-    manager.allocate(contestants=registrar.contestants())
-    _handle_render_entrants(args)
+    registrar.register(contestant)
 
 
 def _handle_judge(args):
@@ -62,6 +50,13 @@ def _handle_judge(args):
         third=args.third,
         commendations=args.commendations,
     )
+
+
+def _handle_allocate(args):
+    registrar = get_registrar(args.location)
+    manager = get_manager(args.location)
+    manager.allocate(contestants=registrar.contestants())
+    _handle_render_entrants(args)
 
 
 def _handle_manual_prize(args):
@@ -82,17 +77,6 @@ def _handle_lookup(args):
 def _handle_prizes(args):
     manager = get_manager(args.location)
     manager.report_prizes()
-
-
-def _handle_export(args):
-    registrar = get_registrar(args.location)
-    manager = get_manager(args.location)
-    export_dir = Path(args.location)
-    export_dir.mkdir(parents=True, exist_ok=True)
-    out_loc = Path(args.location) / "export"
-    out_loc.mkdir(parents=True, exist_ok=True)
-    registrar.to_csv(location=out_loc / "contestants.csv")
-    manager.to_csv(location=out_loc / "classes.csv")
 
 
 def _handle_ranking(args):
@@ -136,13 +120,11 @@ class CLI:
         self._add_judging(subparsers)
         self._add_lookup(subparsers)
         self._add_prizes(subparsers)
-        self._add_export(subparsers)
         self._add_ranking(subparsers)
         self._add_report_class(subparsers)
         self._add_final_report(subparsers)
         self._add_render_entrants(subparsers)
         self._add_manual_prize(subparsers)
-        self._add_delete(subparsers)
 
     def _add_registration(self, subparsers):
         parser = subparsers.add_parser("register", help="Register a new contestant.")
@@ -175,14 +157,6 @@ class CLI:
             required=False,
             type=float,
             default=0.0,
-        )
-
-    def _add_delete(self, subparsers):
-        parser = subparsers.add_parser("delete", help="Delete a contestant.")
-        parser.set_defaults(func=_handle_delete)
-
-        parser.add_argument(
-            "--name", dest="name", help="The name of the contestant.", required=True
         )
 
     def _add_allocation(self, subparsers):
@@ -316,14 +290,6 @@ class CLI:
 
         parser.set_defaults(func=_handle_prizes)
 
-    def _add_export(self, subparsers):
-        parser = subparsers.add_parser(
-            "export",
-            help="Export all data to CSV files.",
-        )
-
-        parser.set_defaults(func=_handle_export)
-
     def _add_ranking(self, subparsers):
         parser = subparsers.add_parser(
             "ranking",
@@ -373,3 +339,7 @@ def run_cli():
     logging.basicConfig(level=logging.INFO)
     cli = CLI()
     cli.run()
+
+
+if __name__ == "__main__":
+    run_cli()
