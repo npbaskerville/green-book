@@ -339,3 +339,7 @@ def run_cli():
     logging.basicConfig(level=logging.INFO)
     cli = CLI()
     cli.run()
+
+
+if __name__ == "__main__":
+    run_cli()
