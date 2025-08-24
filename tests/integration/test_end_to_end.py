@@ -65,7 +65,7 @@ class TestEndToEndShow:
             ("Aunt Dahlia", "1", 0): 4,
             ("Aunt Dahlia", "3", 0): 2,
             ("Aunt Dahlia", "3", 1): 3,
-            ("Aunt Dahlia", "58A", 0): 1,
+            ("Aunt Dahlia", "60A", 0): 1,
             ("Aunt Dahlia", "61", 0): 2,
             ("Aunt Dahlia", "7", 0): 2,
             ("Aunt Dahlia", "62", 0): 1,
