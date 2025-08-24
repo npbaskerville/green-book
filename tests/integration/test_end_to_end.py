@@ -87,7 +87,7 @@ class TestEndToEndShow:
         manager.add_judgment(
             class_id="1",
             first=[_lookup_contestant_id(contestants[0], "1", 0)],
-            second=[_lookup_contestant_id(contestants[1], "1",0)],
+            second=[_lookup_contestant_id(contestants[1], "1", 0)],
             third=[_lookup_contestant_id(contestants[2], "1", 0)],
             commendations=[_lookup_contestant_id(contestants[3], "1", 0)],
         )

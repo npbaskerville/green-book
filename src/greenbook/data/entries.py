@@ -1,7 +1,6 @@
+import pandas as pd
 import pickle
 import hashlib
-
-import pandas as pd
 from attr import attrib
 from typing import Sequence
 from collections import Counter
@@ -73,7 +72,6 @@ class DeletedContestant(Contestant):
 class ContestantData:
     entries_df: pd.DataFrame = attrib()
     paid: float = attrib()
-
 
 
 @dataclass

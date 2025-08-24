@@ -1,14 +1,13 @@
 import re
-from collections import defaultdict
-
 import pandas as pd
 import logging
 from typing import Dict, List, Tuple, Union, Optional, Sequence
 from pathlib import Path
+from collections import defaultdict
 from ruamel.yaml import YAML
 
 from greenbook.data.show import Show, Entry, ShowClass
-from greenbook.data.entries import Contestant, DeletedContestant, ContestantData, AllocatedContestant
+from greenbook.data.entries import Contestant, DeletedContestant, AllocatedContestant
 from greenbook.render.labels import render_contestant_to_file
 from greenbook.render.results import render_prizes, render_ranking, render_class_results
 from greenbook.definitions.prices import ENTRY_COST, FREE_CLASSES

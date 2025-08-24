@@ -71,6 +71,7 @@ def _handle_prizes(args):
     manager = get_manager(args.location)
     manager.report_prizes()
 
+
 def _handle_ranking(args):
     manager = get_manager(args.location)
     manager.report_ranking()
