@@ -45,11 +45,11 @@ class Contestant:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Contestant):
             return False
-        return self.unique_id == other.unique_id
+        return self.unique_id() == other.unique_id()
 
     def __lt__(self, other) -> bool:
         if self.name == other.name:
-            return self.unique_id < other.unique_id
+            return self.unique_id() < other.unique_id()
         return self.name < other.name
 
     def __str__(self) -> str:
@@ -71,6 +71,12 @@ class DeletedContestant(Contestant):
 
 @dataclass
 class ContestantData:
-    name: str = attrib()
     entries_df: pd.DataFrame = attrib()
     paid: float = attrib()
+
+
+
+@dataclass
+class AllocatedContestant:
+    contestant: Contestant = attrib()
+    entries_df: pd.DataFrame = attrib()

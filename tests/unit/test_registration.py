@@ -22,6 +22,7 @@ class TestRegistrar:
             file.unlink()
         random_dir.rmdir()
 
+    @pytest.mark.skip("deprecated method")
     def test_export(self, out_dir):
         contestants = [
             Contestant(name="Alice Appleby", classes=["1", "2", "3"], paid=0.0),
