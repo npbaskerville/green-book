@@ -52,6 +52,13 @@ def _handle_judge(args):
     )
 
 
+def _handle_allocate(args):
+    registrar = get_registrar(args.location)
+    manager = get_manager(args.location)
+    manager.allocate(contestants=registrar.contestants())
+    _handle_render_entrants(args)
+
+
 def _handle_manual_prize(args):
     manager = get_manager(args.location)
     manager.add_prize(
@@ -113,13 +120,11 @@ class CLI:
         self._add_judging(subparsers)
         self._add_lookup(subparsers)
         self._add_prizes(subparsers)
-        self._add_export(subparsers)
         self._add_ranking(subparsers)
         self._add_report_class(subparsers)
         self._add_final_report(subparsers)
         self._add_render_entrants(subparsers)
         self._add_manual_prize(subparsers)
-        self._add_delete(subparsers)
 
     def _add_registration(self, subparsers):
         parser = subparsers.add_parser("register", help="Register a new contestant.")
@@ -153,6 +158,14 @@ class CLI:
             type=float,
             default=0.0,
         )
+
+    def _add_allocation(self, subparsers):
+        parser = subparsers.add_parser(
+            "allocate",
+            help="Allocate contestants to numbers inside classes.",
+        )
+
+        parser.set_defaults(func=_handle_allocate)
 
     def _add_judging(self, subparsers):
         parser = subparsers.add_parser(
