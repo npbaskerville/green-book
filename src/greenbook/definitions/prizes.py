@@ -67,7 +67,7 @@ class WilliamTrowPooleTrophy(HighestPointInSection):
 
 class JoanHollierPlate(HighestPointInSection):
     def __init__(self):
-        super().__init__(section="H", name="Joan Hollier Plate")
+        super().__init__(section="F", name="Joan Hollier Plate")
 
 
 class MBShield(BasePrize):
@@ -92,7 +92,7 @@ class HaroldHerbertCup(HighestPointsInClasses):
     def __init__(self):
         super().__init__(
             name="Harold Herbert Cup",
-            class_ids=["25B", "25B"],
+            class_ids=["25B", "25C"],
         )
 
 
@@ -111,11 +111,11 @@ class CourtHouseSalver(HighestPointInSection):
         super().__init__(name="Court House Salver", section="B")
 
 
-class ChildrensCup(HighestPointsInClasses):
+class ChildrensCup(HighestPointInSection):
     def __init__(self):
         super().__init__(
             name="Children's Cup",
-            class_ids=[str(idx) for idx in range(70, 76)],
+            section="J",
         )
 
 
