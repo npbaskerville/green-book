@@ -40,18 +40,6 @@ def _handle_register(args):
     contestant = Contestant(name=args.name, classes=args.entries, paid=float(args.paid))
     registrar.register(contestant)
 
-#
-# def _handle_delete(args):
-#     registrar = get_registrar(args.location)
-#     registrar.delete_contestant(args.name)
-
-
-# def _handle_allocate(args):
-#     registrar = get_registrar(args.location)
-#     manager = get_manager(args.location)
-#     manager.allocate(contestants=registrar.contestants())
-#     _handle_render_entrants(args)
-
 
 def _handle_judge(args):
     manager = get_manager(args.location)
@@ -82,18 +70,6 @@ def _handle_lookup(args):
 def _handle_prizes(args):
     manager = get_manager(args.location)
     manager.report_prizes()
-#
-#
-# def _handle_export(args):
-#     registrar = get_registrar(args.location)
-#     manager = get_manager(args.location)
-#     export_dir = Path(args.location)
-#     export_dir.mkdir(parents=True, exist_ok=True)
-#     out_loc = Path(args.location) / "export"
-#     out_loc.mkdir(parents=True, exist_ok=True)
-#     registrar.to_csv(location=out_loc / "contestants.csv")
-#     manager.to_csv(location=out_loc / "classes.csv")
-
 
 def _handle_ranking(args):
     manager = get_manager(args.location)
@@ -176,22 +152,6 @@ class CLI:
             type=float,
             default=0.0,
         )
-
-    # def _add_delete(self, subparsers):
-    #     parser = subparsers.add_parser("delete", help="Delete a contestant.")
-    #     parser.set_defaults(func=_handle_delete)
-    #
-    #     parser.add_argument(
-    #         "--name", dest="name", help="The name of the contestant.", required=True
-    #     )
-
-    # def _add_allocation(self, subparsers):
-    #     parser = subparsers.add_parser(
-    #         "allocate",
-    #         help="Allocate contestants to numbers inside classes.",
-    #     )
-    #
-    #     parser.set_defaults(func=_handle_allocate)
 
     def _add_judging(self, subparsers):
         parser = subparsers.add_parser(
@@ -315,14 +275,6 @@ class CLI:
         )
 
         parser.set_defaults(func=_handle_prizes)
-
-    # def _add_export(self, subparsers):
-    #     parser = subparsers.add_parser(
-    #         "export",
-    #         help="Export all data to CSV files.",
-    #     )
-    #
-    #     parser.set_defaults(func=_handle_export)
 
     def _add_ranking(self, subparsers):
         parser = subparsers.add_parser(
