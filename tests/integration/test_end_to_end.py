@@ -45,7 +45,7 @@ class TestEndToEndShow:
             ),
             Contestant(
                 name="Aunt Dahlia",
-                classes=["1", "3", "3", "58A", "61", "7", "62", "2"],
+                classes=["1", "3", "3", "60A", "61", "7", "62", "2"],
                 paid=0.0,
             ),
         ]
@@ -115,8 +115,8 @@ class TestEndToEndShow:
         points["Dahlia"] += 1
         # Class 58A: Dahlia wins
         manager.add_judgment(
-            class_id="58A",
-            first=[_lookup_contestant_id(contestants[3], "58A")[0]],
+            class_id="60A",
+            first=[_lookup_contestant_id(contestants[3], "60A")[0]],
             second=[],
             third=[],
             commendations=[],
@@ -170,7 +170,7 @@ class TestEndToEndShow:
         # -3 signifies it was the 4th entry in class 2, but was moved to class 42
         assert tuple(show_class.third_place) == ((contestants[3], "2-4"),)
         assert tuple(show_class.commendations) == ()
-        show_class = manager.report_class("58A")
+        show_class = manager.report_class("60A")
         assert tuple(show_class.first_place) == ((contestants[3], 1),)
         assert tuple(show_class.second_place) == ()
         assert tuple(show_class.third_place) == ()
