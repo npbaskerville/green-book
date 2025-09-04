@@ -24,7 +24,7 @@ def get_contestant_entries(ledger: pd.DataFrame) -> Dict[str, ContestantData]:
     entry_num_ledger = pd.concat([ledger[[LEDGER_NAME_COL, PAID_COL]], entry_num_ledger], axis=1)
     grouped_entries: Dict[str, ContestantData] = {}
     for name, df in entry_num_ledger.groupby(LEDGER_NAME_COL):
-        paid = float(df[PAID_COL].values[-1])
+        paid = float(df[PAID_COL].values.sum())
         entries_df = (
             df.drop([LEDGER_NAME_COL, PAID_COL], axis=1).dropna(axis=1, how="all").fillna(0)
         )
