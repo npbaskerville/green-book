@@ -103,6 +103,18 @@ def _handle_final_report(args):
     manager.render_final_report(render_loc)
 
 
+def _handle_class_summary(args):
+    manager = get_manager(args.location)
+    render_loc = Path(args.location) / "entry_count.csv"
+    manager.entry_count().to_csv(render_loc)
+
+
+def _handle_export(args):
+    manager = get_manager(args.location)
+    render_loc = Path(args.location) / "export.csv"
+    manager.to_df().to_csv(render_loc)
+
+
 class CLI:
     def __init__(self):
         self._parser = argparse.ArgumentParser(
@@ -123,6 +135,8 @@ class CLI:
         self._add_ranking(subparsers)
         self._add_report_class(subparsers)
         self._add_final_report(subparsers)
+        self._add_class_summary(subparsers)
+        self._add_export(subparsers)
         self._add_render_entrants(subparsers)
         self._add_manual_prize(subparsers)
 
@@ -321,6 +335,22 @@ class CLI:
         )
 
         parser.set_defaults(func=_handle_final_report)
+
+    def _add_class_summary(self, subparsers):
+        parser = subparsers.add_parser(
+            "class_summary",
+            help="Generate summary of entries per class.",
+        )
+
+        parser.set_defaults(func=_handle_class_summary)
+
+    def _add_export(self, subparsers):
+        parser = subparsers.add_parser(
+            "export",
+            help="Generate CSV export of entries.",
+        )
+
+        parser.set_defaults(func=_handle_export)
 
     def _add_render_entrants(self, subparsers):
         parser = subparsers.add_parser(

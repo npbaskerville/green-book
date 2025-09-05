@@ -116,7 +116,7 @@ class Manager:
         _LOG.info("Completed prize report.")
         return winning_strings
 
-    def to_csv(self, location: Path):
+    def to_df(self) -> pd.DataFrame:
         """
         Create a dataframe of contestant_id x class. In each cell, the value
          is the name of the contestant corresponding to the contestant_id in the class,
@@ -132,8 +132,23 @@ class Manager:
             name = contestant.name
             for entry in entries:
                 df.at[entry.contestant_id, entry.class_id] = name
+        return df
+
+    def to_csv(self, location: Path):
+        """
+        Create a dataframe of contestant_id x class. In each cell, the value
+         is the name of the contestant corresponding to the contestant_id in the class,
+          or None if that contestant id does not exist in that class.
+        """
+        df = self.to_df()
         df.to_csv(location)
         _LOG.info(f"Exported contestant data to {location}")
+
+    def entry_count(self) -> pd.Series:
+        """
+        Return the total number of entries in each class.
+        """
+        return (~self.to_df().isna()).sum(axis=0)
 
     def report_ranking(self) -> Sequence[Tuple[Contestant, int]]:
         _LOG.info("Beginning ranking report.")
