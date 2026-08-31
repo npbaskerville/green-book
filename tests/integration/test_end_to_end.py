@@ -45,7 +45,7 @@ class TestEndToEndShow:
             ),
             Contestant(
                 name="Aunt Dahlia",
-                classes=tuple(["1", "3", "3", "60A", "61", "7", "62", "2"]),
+                classes=tuple(["1", "3", "3", "59A", "61", "7", "62", "2"]),
                 paid=0.0,
             ),
         ]
@@ -65,7 +65,7 @@ class TestEndToEndShow:
             ("Aunt Dahlia", "1", 0): 4,
             ("Aunt Dahlia", "3", 0): 2,
             ("Aunt Dahlia", "3", 1): 3,
-            ("Aunt Dahlia", "60A", 0): 1,
+            ("Aunt Dahlia", "59A", 0): 1,
             ("Aunt Dahlia", "61", 0): 2,
             ("Aunt Dahlia", "7", 0): 2,
             ("Aunt Dahlia", "62", 0): 1,
@@ -132,8 +132,8 @@ class TestEndToEndShow:
         points["Dahlia"] += 1
         # Class 58A: Dahlia wins
         manager.add_judgment(
-            class_id="60A",
-            first=[_lookup_contestant_id(contestants[3], "60A", 0)],
+            class_id="59A",
+            first=[_lookup_contestant_id(contestants[3], "59A", 0)],
             second=[],
             third=[],
             commendations=[],
@@ -178,7 +178,10 @@ class TestEndToEndShow:
         assert tuple(show_class.commendations) == ()
         show_class = manager.report_class("3")
         assert tuple(show_class.first_place) == ((contestants[3], 2),)
-        assert tuple(show_class.second_place) == ((contestants[0], 1), (contestants[3], 3))
+        assert tuple(show_class.second_place) == (
+            (contestants[0], 1),
+            (contestants[3], 3),
+        )
         assert tuple(show_class.third_place) == ()
         assert tuple(show_class.commendations) == ()
         show_class = manager.report_class("42")
@@ -187,7 +190,7 @@ class TestEndToEndShow:
         # -3 signifies it was the 4th entry in class 2, but was moved to class 42
         assert tuple(show_class.third_place) == ((contestants[3], "2-4"),)
         assert tuple(show_class.commendations) == ()
-        show_class = manager.report_class("60A")
+        show_class = manager.report_class("59A")
         assert tuple(show_class.first_place) == ((contestants[3], 1),)
         assert tuple(show_class.second_place) == ()
         assert tuple(show_class.third_place) == ()

@@ -1,7 +1,7 @@
-from typing import Dict, Tuple, Sequence
 from itertools import chain
+from collections.abc import Sequence
 
-CLASSES: Dict[str, Sequence[Tuple[str, str]]] = {
+CLASSES: dict[str, Sequence[tuple[str, str]]] = {
     "A": [
         ("1", "White Potatoes"),
         ("2", "Coloured Potatoes"),
@@ -70,39 +70,38 @@ CLASSES: Dict[str, Sequence[Tuple[str, str]]] = {
         ("53", "1 jar of condiment, sauce or relish"),
     ],
     "G": [
-        ("54", "Home laid Eggs (any variety)"),
-        ("55", "Homemade Beer or Cider"),
-        ("56", "Homemade Spirit or Liqueur"),
-        ("57", "Homemade Wine"),
-        ("58", "Homemade Cordial"),
-        ("59", "Homemade Juice"),
+        ("54", "Homemade Beer or Cider"),
+        ("55", "Homemade Spirit or Liqueur"),
+        ("56", "Homemade Wine"),
+        ("57", "Homemade Cordial"),
+        ("58", "Homemade Juice"),
     ],
     "H": [
-        ("60A", "Photographs - anybody"),
-        ("60B", "Photographs - animals"),
-        ("60C", "Photographs - anywhere"),
-        ("60D", "Photographs - arty"),
-        ("61", "Cushion in any Medium, (maximum size 18” square)"),
-        ("62", "An Original Artwork"),
-        ("63", "An Original Line Drawing"),
-        ("64", "A Piece of Quilting or Patchwork"),
-        ("65", "Handmade greetings card"),
-        ("66", "An Upcycled Item"),
-        ("67", "A Piece of Poetry"),
+        ("59A", "Photographs - anybody"),
+        ("59B", "Photographs - animals"),
+        ("59C", "Photographs - anywhere"),
+        ("59D", "Photographs - arty"),
+        ("60", "Cushion in any Medium, (maximum size 18” square)"),
+        ("61", "An Original Artwork"),
+        ("62", "An Original Line Drawing"),
+        ("63", "A Piece of Quilting or Patchwork"),
+        ("64", "Handmade greetings card"),
+        ("65", "An Upcycled Item"),
+        ("66", "A Piece of Poetry"),
     ],
     "I": [
-        ("68", "Garden in a Seed Tray"),
-        ("69", "A character made from Fruit or Vegetables"),
-        ("70", "Most Misshapen Vegetable"),
-        ("71", "Scene from history made from Lego (no sets allowed!)"),
+        ("67", "Garden in a Seed Tray"),
+        ("68", "A character made from Fruit or Vegetables"),
+        ("69", "Most Misshapen Vegetable"),
+        ("70", "Scene from history made from Lego (no sets allowed!)"),
     ],
     "J": [
-        ("72", "Decorated Fairy Cakes (3 per plate)"),
-        ("73", "Garden Flowers in a Jam Jar"),
-        ("74", "A piece of Artwork using Recycled Material"),
-        ("75", "Garden in a seed tray"),
-        ("76", "Any Photograph taken during the current year"),
-        ("77", "Scene from history made from Lego (no sets allowed!)"),
+        ("71", "Decorated Fairy Cakes (3 per plate)"),
+        ("72", "Garden Flowers in a Jam Jar"),
+        ("73", "A piece of Artwork using Recycled Material"),
+        ("74", "Garden in a seed tray"),
+        ("75", "Any Photograph taken during the current year"),
+        ("76", "Scene from history made from Lego (no sets allowed!)"),
     ],
 }
 
