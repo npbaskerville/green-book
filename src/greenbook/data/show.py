@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import pandas as pd
 from attr import attrib
-from typing import Dict, Tuple, Union, Optional, Sequence
 from dataclasses import dataclass
 from ruamel.yaml import YAML, yaml_object
+from collections.abc import Sequence
 
 from greenbook.data.consts import MAX_ENTRIES_PER_CONTESTANT
 from greenbook.data.entries import Contestant
@@ -30,10 +30,10 @@ class ShowClass:
     class_id: str = attrib(type=str)
     name: str = attrib(type=str)
     contestants: Sequence[Contestant] = attrib(type=Sequence[Contestant])
-    first_place: Sequence[Tuple[Contestant, int]] = attrib(type=Sequence[Tuple[Contestant, int]])
-    second_place: Sequence[Tuple[Contestant, int]] = attrib(type=Sequence[Tuple[Contestant, int]])
-    third_place: Sequence[Tuple[Contestant, int]] = attrib(type=Sequence[Tuple[Contestant, int]])
-    commendations: Sequence[Tuple[Contestant, int]] = attrib(type=Sequence[Tuple[Contestant, int]])
+    first_place: Sequence[tuple[Contestant, int]] = attrib(type=Sequence[tuple[Contestant, int]])
+    second_place: Sequence[tuple[Contestant, int]] = attrib(type=Sequence[tuple[Contestant, int]])
+    third_place: Sequence[tuple[Contestant, int]] = attrib(type=Sequence[tuple[Contestant, int]])
+    commendations: Sequence[tuple[Contestant, int]] = attrib(type=Sequence[tuple[Contestant, int]])
 
     def __post_init__(self):
         assert all(
@@ -59,10 +59,10 @@ class ShowClass:
 
     def add_judgments(
         self,
-        first: Sequence[Tuple[Contestant, Union[int, str]]],
-        second: Sequence[Tuple[Contestant, Union[int, str]]],
-        third: Sequence[Tuple[Contestant, Union[int, str]]],
-        commendations: Sequence[Tuple[Contestant, Union[int, str]]],
+        first: Sequence[tuple[Contestant, int | str]],
+        second: Sequence[tuple[Contestant, int | str]],
+        third: Sequence[tuple[Contestant, int | str]],
+        commendations: Sequence[tuple[Contestant, int | str]],
     ) -> ShowClass:
         return ShowClass(
             class_id=self.class_id,
@@ -74,7 +74,7 @@ class ShowClass:
             commendations=commendations,
         )
 
-    def points(self) -> Dict[Contestant, int]:
+    def points(self) -> dict[Contestant, int]:
         contestant_points = {}
         for contestants, points in zip(
             [
@@ -120,12 +120,12 @@ class ShowClass:
             df_data["entry"].append(contestant_id)
             df_data["place"].append("Commendation")
 
-        seen = {*first_tuples, *second_tuples, *third_tuples, *commendation_tuples}
-        for i, contestant in enumerate(self.contestants):
-            if (contestant, i + 1) not in seen:
-                df_data["name"].append(contestant.name)
-                df_data["entry"].append(i + 1)
-                df_data["place"].append(None)
+        # seen = {*first_tuples, *second_tuples, *third_tuples, *commendation_tuples}
+        # for i, contestant in enumerate(self.contestants):
+        #     if (contestant, i + 1) not in seen:
+        #         df_data["name"].append(contestant.name)
+        #         df_data["entry"].append(i + 1)
+        #         df_data["place"].append(None)
 
         df = pd.DataFrame(df_data)
         # change place to int type
@@ -137,7 +137,9 @@ class ShowClass:
 @yaml_object(yaml)
 class Show:
     def __init__(
-        self, classes: Sequence[ShowClass], prizes: Sequence[Tuple[Contestant, int, str]] = ()
+        self,
+        classes: Sequence[ShowClass],
+        prizes: Sequence[tuple[Contestant, int, str]] = (),
     ):
         self._classes = {s.class_id: s for s in classes}
         self._prizes = prizes
@@ -158,7 +160,7 @@ class Show:
     def total_entries(self) -> int:
         return sum(len(s) for s in self.classes())
 
-    def class_lookup(self, class_id: str) -> Optional[ShowClass]:
+    def class_lookup(self, class_id: str) -> ShowClass | None:
         return self._classes.get(class_id)
 
     def update_class(self, show_class: ShowClass) -> Show:
@@ -171,17 +173,19 @@ class Show:
 
     def contestant_entries(
         self,
-    ) -> Dict[Contestant, Sequence[Entry]]:
+    ) -> dict[Contestant, Sequence[Entry]]:
         entries = {}
         for show_class in self.classes():
             for number, contestant in enumerate(show_class.contestants):
                 entries[contestant] = entries.get(contestant, []) + [
                     Entry(
-                        contestant_id=number + 1, class_id=show_class.class_id, name=show_class.name
+                        contestant_id=number + 1,
+                        class_id=show_class.class_id,
+                        name=show_class.name,
                     )
                 ]
         return entries
 
     @property
-    def prizes(self) -> Sequence[Tuple[Contestant, int, str]]:
+    def prizes(self) -> Sequence[tuple[Contestant, int, str]]:
         return self._prizes
