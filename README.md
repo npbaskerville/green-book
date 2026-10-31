@@ -42,9 +42,12 @@ new folder for each year's show.
 
 Work through the tabs in order:
 
-1. **Entries**: type each entrant's name, their classes (e.g. `1, 14, 34A, 50, 50`; repeat a
-   class to enter it twice) and what they've paid. The fee and amount due are worked out for
-   you. To add entries for someone already registered, register them again under the same name.
+1. **Entries**: type each entrant's name; people already registered are suggested as you
+   type, and capital letters and extra spaces don't matter (`bob smith` is `Bob Smith`). Then
+   type their classes (e.g. `1, 14, 34A, 50, 50`; repeat a class to enter it twice) and what
+   they've paid. The fee and amount due are worked out for you. To add entries for someone
+   already registered, register them again under the same name. The red minus next to a name
+   hides it from the table only: their entries stay in the show.
 2. **Allocation & slips**: once entries close, allocate them. This numbers every entry within
    its class and makes one entry-slip PDF per entrant, which you can download individually or
    as a ZIP. Late registrations can be allocated later without changing existing numbers.

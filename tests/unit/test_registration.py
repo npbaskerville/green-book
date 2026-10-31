@@ -19,6 +19,15 @@ class TestContestantValidation:
         with pytest.raises(ValueError, match=message):
             Contestant(**kwargs)
 
+    def test_names_ignore_case_and_spacing(self, tmp_path):
+        registrar = get_registrar(tmp_path)
+        registrar.register(Contestant(name="bob  smith", classes=["1"], paid=0.0))
+        registrar.register(Contestant(name="BOB Smith", classes=["2"], paid=0.0))
+        registrar.register(Contestant(name="Ann McDonald", classes=["3"], paid=0.0))
+        assert registrar.canonical_name("ANN MCDONALD") == "Ann McDonald"
+        names = sorted(c.contestant.name for c in get_registrar(tmp_path).contestants())
+        assert names == ["Ann McDonald", "Bob Smith"]
+
     def test_valid_contestant(self):
         Contestant(name="Alice Appleby", classes=["1", "1", "25A"], paid=0.5)
 
