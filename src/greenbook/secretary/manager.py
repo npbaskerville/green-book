@@ -10,9 +10,9 @@ from greenbook.data.show import Show, Entry, ShowClass
 from greenbook.data.entries import Contestant, AllocatedContestant
 from greenbook.render.labels import render_contestant_to_file
 from greenbook.render.results import render_prizes, render_ranking, render_class_results
-from greenbook.definitions.prices import ENTRY_COST, FREE_CLASSES
+from greenbook.definitions.prices import entry_fee
 from greenbook.definitions.prizes import ALL_PRIZES, sort_contestant_by_points
-from greenbook.definitions.classes import FLAT_CLASSES, CLASS_ID_TO_SECTION
+from greenbook.definitions.classes import FLAT_CLASSES
 
 _LOG = logging.getLogger(__name__)
 
@@ -26,6 +26,11 @@ class Manager:
         if self._ledger_loc.exists():
             with self._ledger_loc.open("r") as f:
                 self._show = yaml.load(f)
+
+    @property
+    def show(self) -> Optional[Show]:
+        """The allocated show, or None before allocation."""
+        return self._show
 
     def allocate(self, contestants: Sequence[AllocatedContestant]):
         grouped_by_class: Dict[str, List[Tuple[int, Contestant]]] = defaultdict(list)
@@ -172,11 +177,7 @@ class Manager:
 
     def render_contestants(self, directory: Path):
         for contestant, entries in self.contestant_entries().items():
-            price = 0.0
-            for entry in entries:
-                if CLASS_ID_TO_SECTION[entry.class_id] not in FREE_CLASSES:
-                    price += ENTRY_COST
-            price -= contestant.paid
+            price = entry_fee(entry.class_id for entry in entries) - contestant.paid
             render_contestant_to_file(contestant.name, entries, directory, price=price)
 
     def render_final_report(self, directory: Path):
