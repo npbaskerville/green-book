@@ -196,6 +196,10 @@ def test_hide_entrant_from_table_only(app, tmp_path):
     register(app, "Aunt Dahlia", "1")
     register(app, "Bob Beetroot", "1")
     app.button(key="hide-Bob Beetroot").click().run()
+    button(app, "Cancel").click().run()  # the pop-up asks first; cancelling changes nothing
+    assert "Bob Beetroot" in [m.value for m in app.markdown]
+    app.button(key="hide-Bob Beetroot").click().run()
+    button(app, "Hide").click().run()
     assert_ok(app)
     shown = [m.value for m in app.markdown]
     assert "Bob Beetroot" not in shown and "Aunt Dahlia" in shown

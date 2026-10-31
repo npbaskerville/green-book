@@ -246,6 +246,27 @@ def set_hidden(location: Path, name: str, hide: bool) -> str:
     return f"{name} is shown in the table again."
 
 
+def ask_to_hide(name: str):
+    st.session_state.pending_hide = name
+
+
+@st.dialog("Hide entrant?", dismissible=False)
+def confirm_hide(location: Path, name: str):
+    st.write(f"Hide **{name}** from the entrants table?")
+    st.caption(
+        "Their entries, entry slips and results stay in the show. You can show them again "
+        "with *Show hidden entrants*."
+    )
+    col_ok, col_cancel = st.columns(2)
+    if col_ok.button("Hide", type="primary"):
+        act("entrants", location, set_hidden, name, True)
+        st.session_state.pop("pending_hide", None)
+        st.rerun()
+    if col_cancel.button("Cancel"):
+        st.session_state.pop("pending_hide", None)
+        st.rerun()
+
+
 def allocate(location: Path) -> str:
     get_manager(location).allocate(get_registrar(location).contestants())
     get_manager(location).render_contestants(location / "render")
@@ -446,10 +467,16 @@ with tab_entries:
                     key=f"hide-{entrant.name}",
                     help="Show in this table again" if is_hidden else "Hide from this table",
                     type="tertiary",
-                    on_click=act,
-                    args=("entrants", location, set_hidden, entrant.name, not is_hidden),
+                    # Unhiding is immediate; hiding asks first.
+                    on_click=act if is_hidden else ask_to_hide,
+                    args=("entrants", location, set_hidden, entrant.name, False)
+                    if is_hidden
+                    else (entrant.name,),
                 )
     flash("entrants")
+    # Kept until the dialog's Hide or Cancel is pressed.
+    if pending_hide := st.session_state.get("pending_hide"):
+        confirm_hide(location, pending_hide)
 # endregion
 
 # region allocation
