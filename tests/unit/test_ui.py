@@ -2,8 +2,10 @@ import pytest
 
 from pathlib import Path
 from streamlit.testing.v1 import AppTest
+from streamlit.proto.WidgetStates_pb2 import WidgetState
+from streamlit.testing.v1.element_tree import Selectbox
 
-from greenbook.cli.main import get_manager
+from greenbook.cli.main import get_manager, get_registrar
 
 APP = Path(__file__).parents[2] / "src" / "greenbook" / "ui" / "app.py"
 
@@ -30,21 +32,45 @@ def app(tmp_path, monkeypatch):
     return at
 
 
+@pytest.fixture(autouse=True)
+def selectbox_accepts_typed_values(monkeypatch):
+    """
+    AppTest can only pick existing selectbox options. Send a typed new value the way the
+    browser does for `accept_new_options=True`, so the name box can be tested.
+    """
+
+    def widget_state(self):
+        value = self.value
+        if isinstance(value, str) and value not in self.options:
+            ws = WidgetState()
+            ws.id = self.id
+            ws.string_value = value
+            return ws
+        return original.fget(self)
+
+    original = Selectbox._widget_state
+    monkeypatch.setattr(Selectbox, "_widget_state", property(widget_state))
+
+
+def type_name(at: AppTest, name: str):
+    at.selectbox(key="reg_name").set_value(name)
+
+
 def register(at: AppTest, name: str, classes: str, paid: float = 0.0):
-    at.text_input(key="reg_name").set_value(name)
+    type_name(at, name)
     at.text_input(key="reg_classes").set_value(classes)
     at.number_input(key="reg_paid").set_value(paid)
     at.run()
     button(at, "Register").click().run()
     assert_ok(at)
-    assert any(name in s.value for s in at.success)
+    assert any(" ".join(name.split()).casefold() in s.value.casefold() for s in at.success)
 
 
 def test_full_show(app, tmp_path):
     at = app
     register(at, "Aunt Dahlia", "1, 2, 25a", paid=0.2)
     register(at, "Bob Beetroot", "1 2 2")
-    assert at.text_input(key="reg_name").value == ""
+    assert at.selectbox(key="reg_name").value is None
 
     button(at, "Allocate entries and generate slips").click().run()
     assert_ok(at)
@@ -88,7 +114,7 @@ def test_full_show(app, tmp_path):
 
 
 def test_invalid_entry_shows_message(app):
-    app.text_input(key="reg_name").set_value("Aunt Dahlia")
+    type_name(app, "Aunt Dahlia")
     app.text_input(key="reg_classes").set_value("1, 999")
     app.run()
     assert any("Unknown class '999'" in e.value for e in app.error)
@@ -147,3 +173,35 @@ def test_judging_hides_names_by_default(app):
     first = widget(app.multiselect, "1st")
     assert first.options == ["1 – Aunt Dahlia", "2 – Bob Beetroot"]
     assert first.value == [("1", 2)]  # unsaved pick survives the toggle
+
+
+def test_names_ignore_case(app, tmp_path):
+    register(app, "aunt  dahlia", "1")  # new name typed in lower case is tidied
+    assert any("Aunt Dahlia" in s.value for s in app.success)
+    assert app.selectbox(key="reg_name").options == ["Aunt Dahlia"]  # offered as you type
+
+    type_name(app, "AUNT DAHLIA")
+    app.text_input(key="reg_classes").set_value("2")
+    app.run()
+    assert any("already registered" in w.value for w in app.warning)
+    app.checkbox(key="reg_merge").check().run()
+    button(app, "Register").click().run()
+    assert_ok(app)
+    (entrant,) = get_registrar(tmp_path).contestants()
+    assert entrant.contestant.name == "Aunt Dahlia"
+    assert sorted(entrant.contestant.classes) == ["1", "2"]
+
+
+def test_hide_entrant_from_table_only(app, tmp_path):
+    register(app, "Aunt Dahlia", "1")
+    register(app, "Bob Beetroot", "1")
+    app.button(key="hide-Bob Beetroot").click().run()
+    assert_ok(app)
+    shown = [m.value for m in app.markdown]
+    assert "Bob Beetroot" not in shown and "Aunt Dahlia" in shown
+    assert len(get_registrar(tmp_path).contestants()) == 2  # still registered
+
+    widget(app.toggle, "Show hidden entrants (1)").set_value(True).run()
+    assert ":gray[Bob Beetroot (hidden)]" in [m.value for m in app.markdown]
+    app.button(key="hide-Bob Beetroot").click().run()
+    assert not any(t.label.startswith("Show hidden") for t in app.toggle)

@@ -9,6 +9,7 @@ import io
 import os
 import re
 import sys
+import json
 import pandas as pd
 import shutil
 import zipfile
@@ -27,6 +28,7 @@ from greenbook.definitions.classes import FLAT_CLASSES
 
 PLACES = {"first": "1st", "second": "2nd", "third": "3rd", "commendations": "Commended"}
 BAD_NAME_CHARS = set('\\/:*?"<>|')  # names become PDF filenames, and Windows rejects these
+HIDDEN_FILE = "hidden-entrants.json"  # names hidden from the entrants table; display only
 REPORTS = {
     "final-class-report.pdf": "class results",
     "final-prize-report.pdf": "prize winners",
@@ -105,6 +107,13 @@ def judged_prize_awards(show: Show) -> dict[str, tuple[str, int]]:
 
 def entry_name(show: Show, key: tuple[str, int]) -> str:
     return show.class_lookup(key[0]).entry_lookup(key[1]).name
+
+
+def hidden_entrants(location: Path) -> set[str]:
+    try:
+        return set(json.loads((location / HIDDEN_FILE).read_text()))
+    except FileNotFoundError:
+        return set()
 
 
 def backup(location: Path):
@@ -211,16 +220,30 @@ def confirm_folder(path: Path):
 # region changes (each is a button callback that reads its inputs from session state)
 def register(location: Path) -> str:
     ss = st.session_state
-    name = ss.reg_name.strip()
+    registrar = get_registrar(location)
+    name = registrar.canonical_name(ss.reg_name or "")
     check_name(name)
-    existing = {c.contestant.name for c in get_registrar(location).contestants()}
+    existing = {c.contestant.name for c in registrar.contestants()}
     if name in existing and not ss.get("reg_merge"):
         raise ValueError(f"{name} is already registered. Tick the box to add these entries.")
     contestant = Contestant(name=name, classes=parse_classes(ss.reg_classes), paid=ss.reg_paid)
-    get_registrar(location).register(contestant)
-    ss.reg_name, ss.reg_classes, ss.reg_paid = "", "", 0.0
+    registrar.register(contestant)
+    ss.reg_name, ss.reg_classes, ss.reg_paid = None, "", 0.0
     ss.pop("reg_merge", None)
     return f"Registered {len(contestant.classes)} entries for {name}."
+
+
+def set_hidden(location: Path, name: str, hide: bool) -> str:
+    """Hide or unhide a name in the entrants table. Their registration is never changed."""
+    hidden = hidden_entrants(location)
+    if hide:
+        hidden.add(name)
+    else:
+        hidden.discard(name)
+    (location / HIDDEN_FILE).write_text(json.dumps(sorted(hidden), indent=1))
+    if hide:
+        return f"Hid {name} from the table. Their entries are still in the show."
+    return f"{name} is shown in the table again."
 
 
 def allocate(location: Path) -> str:
@@ -298,7 +321,8 @@ if pending := ss.get("pending_location"):
     confirm_folder(pending)
 
 try:
-    contestants = get_registrar(location).contestants()
+    registrar = get_registrar(location)
+    contestants = registrar.contestants()
     manager = get_manager(location)
 except Exception as e:
     st.error(f"Couldn't read the show data in {location}: {e}")
@@ -331,7 +355,17 @@ tab_entries, tab_allocate, tab_judging, tab_results, tab_lookup = st.tabs(
 with tab_entries:
     st.subheader("Register an entrant")
     col_name, col_classes, col_paid = st.columns([2, 3, 1])
-    col_name.text_input("Full name", key="reg_name")
+    names = sorted({c.contestant.name for c in contestants})
+    col_name.selectbox(
+        "Full name",
+        names,
+        index=None,
+        key="reg_name",
+        accept_new_options=True,
+        placeholder="Type a name",
+        help="Start typing to pick someone already registered, or type a new name. "
+        "Capital letters don't matter: bob smith is the same as Bob Smith.",
+    )
     col_classes.text_input(
         "Classes",
         key="reg_classes",
@@ -340,7 +374,8 @@ with tab_entries:
     )
     col_paid.number_input("Paid (£)", key="reg_paid", min_value=0.0, step=0.1, format="%.2f")
 
-    name = st.session_state.reg_name.strip()
+    typed = st.session_state.reg_name or ""
+    name = registrar.canonical_name(typed) if typed.strip() else ""
     classes = parse_classes(st.session_state.reg_classes)
     problem = None
     if name or classes:
@@ -361,13 +396,12 @@ with tab_entries:
             f"due {money(fee - st.session_state.reg_paid)}"
         )
 
-    names = {c.contestant.name for c in contestants}
     is_existing = name in names
     if is_existing:
         st.warning(f"{name} is already registered.")
         st.checkbox(f"Add these entries to {name}'s existing entries", key="reg_merge")
-    elif similar := [n for n in names if n.casefold() == name.casefold()]:
-        st.warning(f"Similar to existing entrant {similar[0]}. Check the spelling.")
+    elif name and name != typed.strip():
+        st.caption(f"Will be saved as **{name}**")
 
     st.button(
         "Register",
@@ -379,22 +413,43 @@ with tab_entries:
     )
     flash("entries")
 
-    st.subheader(f"Registered entrants ({len(contestants)})")
-    if contestants:
-        rows = []
-        for c in sorted(contestants, key=lambda c: c.contestant.name):
-            fee = entry_fee(c.contestant.classes)
-            rows.append(
-                {
-                    "Name": c.contestant.name,
-                    "Classes": ", ".join(sorted(c.contestant.classes, key=class_sort_key)),
-                    "Entries": len(c.contestant.classes),
-                    "Fee": money(fee),
-                    "Paid": money(c.contestant.paid),
-                    "Due": money(fee - c.contestant.paid),
-                }
-            )
-        st.dataframe(pd.DataFrame(rows), hide_index=True)
+    hidden = hidden_entrants(location) & set(names)
+    shown = [c for c in contestants if c.contestant.name not in hidden]
+    st.subheader(f"Registered entrants ({len(shown)})")
+    show_hidden = bool(hidden) and st.toggle(
+        f"Show hidden entrants ({len(hidden)})",
+        key="show_hidden",
+        help="Hiding only removes a name from this table. Their entries stay in the show.",
+    )
+    rows = sorted(contestants if show_hidden else shown, key=lambda c: c.contestant.name)
+    if rows:
+        widths = [3, 5, 1, 1, 1, 1, 1]
+        for col, title in zip(
+            st.columns(widths), ["Name", "Classes", "Entries", "Fee", "Paid", "Due"]
+        ):
+            col.markdown(f"**{title}**")
+        with st.container(height=480 if len(rows) > 10 else "content", border=False):
+            for c in rows:
+                entrant, fee = c.contestant, entry_fee(c.contestant.classes)
+                is_hidden = entrant.name in hidden
+                cols = st.columns(widths, vertical_alignment="center")
+                cols[0].write(f":gray[{entrant.name} (hidden)]" if is_hidden else entrant.name)
+                cols[1].write(", ".join(sorted(entrant.classes, key=class_sort_key)))
+                cols[2].write(str(len(entrant.classes)))
+                cols[3].write(money(fee))
+                cols[4].write(money(entrant.paid))
+                cols[5].write(money(fee - entrant.paid))
+                cols[6].button(
+                    ":green[:material/add_circle:]"
+                    if is_hidden
+                    else ":red[:material/do_not_disturb_on:]",
+                    key=f"hide-{entrant.name}",
+                    help="Show in this table again" if is_hidden else "Hide from this table",
+                    type="tertiary",
+                    on_click=act,
+                    args=("entrants", location, set_hidden, entrant.name, not is_hidden),
+                )
+    flash("entrants")
 # endregion
 
 # region allocation
