@@ -35,9 +35,10 @@ greenbook-ui
 
 This opens Greenbook in your web browser. It runs only on your computer: nothing is sent
 anywhere, and closing the terminal window stops it. The show's files are kept in
-`~/greenbook-data` (on Windows, `C:\Users\<you>\greenbook-data`). You can change the folder
-in the sidebar, or start with `greenbook-ui --location <folder>`. Use a new folder for each
-year's show.
+`~/greenbook-data` (on Windows, `C:\Users\<you>\greenbook-data`). To change the folder, type
+it in the sidebar and press Enter, then confirm; you'll be told whether it holds an existing
+show or will be a new one. You can also start with `greenbook-ui --location <folder>`. Use a
+new folder for each year's show.
 
 Work through the tabs in order:
 
@@ -48,10 +49,12 @@ Work through the tabs in order:
    its class and makes one entry-slip PDF per entrant, which you can download individually or
    as a ZIP. Late registrations can be allocated later without changing existing numbers.
 3. **Judging**: on the day, choose a class and pick the 1st, 2nd, 3rd and commended entries.
+   Only entry numbers are shown unless you turn on *Show entrant names*.
    Turn on *Include entries from other classes* to award a place to an entry from another
    class. Special prizes, such as the Wonky Wooden Spoon, are awarded at the bottom.
 4. **Results**: trophy winners, the points ranking and each class's results. *Generate results
-   PDFs* makes the final reports to download or print.
+   PDFs* makes the final reports. *Open* shows a PDF in your computer's PDF viewer, ready to
+   print.
 5. **Lookup**: find who an entry belongs to, what a person entered, and entry counts per class.
 
 Before every change, a copy of the show's files is saved under `backups/` in the data folder.

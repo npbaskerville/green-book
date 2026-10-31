@@ -8,11 +8,13 @@ change goes through the same Registrar/Manager calls as the CLI, so the two can 
 import io
 import os
 import re
+import sys
 import pandas as pd
 import shutil
 import zipfile
 import streamlit as st
 import matplotlib
+import subprocess
 from pathlib import Path
 from datetime import datetime
 from collections import Counter
@@ -118,9 +120,77 @@ def flash(slot: str):
         getattr(st, kind)(text)
 
 
-def download(label: str, path: Path, **kwargs):
+def open_file(path: Path, slot: str):
+    """Open a file in this computer's default app (the UI always runs on the same computer)."""
+    try:
+        if sys.platform == "win32":
+            os.startfile(path)
+        else:
+            subprocess.run(["open" if sys.platform == "darwin" else "xdg-open", path], check=True)
+    except Exception as e:
+        st.session_state[f"flash-{slot}"] = (
+            "error",
+            f"Couldn't open {path.name} ({e}). Use Download instead.",
+        )
+
+
+def pdf_buttons(label: str, path: Path, key: str):
+    """Open and Download buttons for a PDF, if it exists."""
     if path.exists():
-        st.download_button(label, path.read_bytes(), file_name=path.name, **kwargs)
+        col_open, col_download, _ = st.columns([2, 2, 5])
+        col_open.button(
+            f"Open {label}", key=f"open-{key}", on_click=open_file, args=(path, key), type="primary"
+        )
+        col_download.download_button(
+            "Download", path.read_bytes(), file_name=path.name, key=f"dl-{key}", on_click="ignore"
+        )
+        flash(key)
+
+
+def folder_kind(path: Path) -> str:
+    if not path.exists():
+        return "new"
+    if not path.is_dir():
+        return "file"
+    if (path / "contestants.csv").exists() or (path / "classes.yaml").exists():
+        return "show"
+    return "empty"
+
+
+@st.dialog("Change data folder?", dismissible=False)
+def confirm_folder(path: Path):
+    st.code(str(path), language=None)
+    kind = folder_kind(path)
+    if kind == "file":
+        st.error("That's a file, not a folder.")
+    elif kind == "show":
+        try:
+            n = len(get_registrar(path).contestants())
+            st.info(f"📂 This folder already has a show, with {n} registered entrants.")
+        except Exception as e:
+            st.warning(f"📂 This folder already has show files, but they can't be read: {e}")
+    elif kind == "empty":
+        st.info("📂 This folder already exists but has no show in it. A new show will start here.")
+    else:
+        st.info("🆕 This folder doesn't exist yet. It will be created for a new show.")
+    labels = {"new": "Create folder and switch", "show": "Switch to this show"}
+    col_ok, col_cancel = st.columns(2)
+    if col_ok.button(labels.get(kind, "Switch"), type="primary", disabled=kind == "file"):
+        path.mkdir(parents=True, exist_ok=True)
+        st.session_state.location = str(path)
+        message = {
+            "new": "Created a new folder and switched to it.",
+            "show": "Switched to the existing show in this folder.",
+            "empty": "Switched to this folder (no show in it yet).",
+        }[kind]
+        st.session_state["flash-folder"] = ("success", f"✅ {message}")
+        st.session_state.reset_location_input = True
+        st.session_state.pop("pending_location", None)
+        st.rerun()
+    if col_cancel.button("Cancel"):
+        st.session_state.reset_location_input = True
+        st.session_state.pop("pending_location", None)
+        st.rerun()
 
 
 # endregion
@@ -181,15 +251,35 @@ def final_report(location: Path) -> str:
 
 st.set_page_config(page_title="Greenbook", page_icon="🥕", layout="wide")
 
+ss = st.session_state
+if "location" not in ss:
+    default = os.getenv("GREENBOOK_LOCATION", "~/greenbook-data")
+    ss.location = str(Path(default).expanduser().resolve())
+if "location_input" not in ss or ss.pop("reset_location_input", False):
+    ss.location_input = ss.location
+location = Path(ss.location)
+
+
+def location_changed():
+    typed = Path(ss.location_input.strip() or ".").expanduser().resolve()
+    if typed != Path(ss.location):
+        ss.pending_location = typed
+
+
 with st.sidebar:
     st.title("🥕 Greenbook")
-    default_location = os.getenv("GREENBOOK_LOCATION", str(Path("~/greenbook-data").expanduser()))
-    location_text = st.text_input(
+    st.text_input(
         "Data folder",
-        value=default_location,
-        help="Where this show's files are kept. Use a new folder for each year's show.",
+        key="location_input",
+        on_change=location_changed,
+        help="Where this show's files are kept. Use a new folder for each year's show. "
+        "Type a folder and press Enter to switch.",
     )
-    location = Path(location_text).expanduser().resolve()
+    flash("folder")
+    st.caption(f"✅ Using `{location}`")
+# Kept until the dialog's Switch or Cancel is pressed (the dialog can't be dismissed otherwise).
+if pending := ss.get("pending_location"):
+    confirm_folder(pending)
 
 try:
     contestants = get_registrar(location).contestants()
@@ -320,7 +410,7 @@ with tab_allocate:
                 zf.write(slip, slip.name)
         st.download_button("Download all slips (ZIP)", zipped.getvalue(), "entry-slips.zip")
         slip = st.selectbox("Entrant", slips, format_func=lambda p: p.stem, key="slip_entrant")
-        download(f"Download slip for {slip.stem}", slip)
+        pdf_buttons(f"slip for {slip.stem}", slip, key="slip")
         st.caption(f"Slips are also saved in `{render_dir}`")
 # endregion
 
@@ -337,28 +427,26 @@ with tab_judging:
             f"({len(sc)} {'entry' if len(sc) == 1 else 'entries'})",
         )
         cid = current.class_id
-        saved = saved_results(current)
-        results = results_by_entry(show)
-        own_entries = [(cid, n) for n in range(1, len(current) + 1)]
-        st.dataframe(
-            pd.DataFrame(
-                {
-                    "Entry": [n for _, n in own_entries],
-                    "Name": [entry_name(show, key) for key in own_entries],
-                    "Result": [results.get(key, "") for key in own_entries],
-                }
-            ),
-            hide_index=True,
+        col_names, col_cross = st.columns(2)
+        show_names = col_names.toggle(
+            "Show entrant names", key="judge_names", help="Off: only entry numbers are shown."
         )
-
-        saved_keys = {key for keys in saved.values() for key in keys}
-        cross = st.toggle(
+        cross = col_cross.toggle(
             "Include entries from other classes",
-            value=any(c != cid for c, _ in saved_keys),
             key=f"cross-{cid}",
             help="Award a place here to an entry from another class. "
             "These appear as class-entry, e.g. 25A-3.",
         )
+        saved = saved_results(current)
+        results = results_by_entry(show)
+        own_entries = [(cid, n) for n in range(1, len(current) + 1)]
+        table = {"Entry": [n for _, n in own_entries]}
+        if show_names:
+            table["Name"] = [entry_name(show, key) for key in own_entries]
+        table["Result"] = [results.get(key, "") for key in own_entries]
+        st.dataframe(pd.DataFrame(table), hide_index=True)
+
+        saved_keys = {key for keys in saved.values() for key in keys}
         others = [
             (sc.class_id, n)
             for sc in show_classes
@@ -369,9 +457,8 @@ with tab_judging:
         options = own_entries + [k for k in others if cross or k in saved_keys]
 
         def option_label(key):
-            if key[0] == cid:
-                return f"{key[1]} – {entry_name(show, key)}"
-            return f"{key[0]}-{key[1]} – {entry_name(show, key)}"
+            label = str(key[1]) if key[0] == cid else f"{key[0]}-{key[1]}"
+            return f"{label} – {entry_name(show, key)}" if show_names else label
 
         # Keys include the file's modification time so the widgets reload from disk after saving.
         version = (location / "classes.yaml").stat().st_mtime_ns
@@ -418,7 +505,9 @@ with tab_judging:
         col_entry.selectbox(
             "Entry",
             range(1, len(prize_class) + 1),
-            format_func=lambda n: f"{n} – {prize_class.entry_lookup(n).name}",
+            format_func=lambda n: f"{n} – {prize_class.entry_lookup(n).name}"
+            if show_names
+            else str(n),
             key=entry_widget,
         )
         col_prize.text_input("Prize", key="prize_name")
@@ -430,7 +519,8 @@ with tab_judging:
         flash("prize")
         if show.prizes:
             awarded = [
-                {"Prize": prize, "Winner": contestant.name, "Class": class_label(class_id)}
+                {"Prize": prize, "Class": class_label(class_id)}
+                | ({"Winner": contestant.name} if show_names else {})
                 for contestant, class_id, prize in show.prizes
             ]
             st.dataframe(pd.DataFrame(awarded), hide_index=True)
@@ -470,7 +560,7 @@ with tab_results:
         )
         flash("report")
         for report in REPORTS:
-            download(f"Download {report}", render_dir / report, key=f"dl-{report}")
+            pdf_buttons(report, render_dir / report, key=report)
 # endregion
 
 # region lookup

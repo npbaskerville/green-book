@@ -92,3 +92,46 @@ def test_reallocation_needs_confirmation(app):
     assert button(app, "Allocate entries and generate slips").disabled
     app.checkbox(key="allocate_confirm").check().run()
     assert not button(app, "Allocate entries and generate slips").disabled
+
+
+def switch_folder(at: AppTest, path: Path, confirm: str):
+    at.text_input(key="location_input").set_value(str(path)).run()
+    button(at, confirm).click().run()
+    assert_ok(at)
+
+
+def test_switch_to_new_folder(app, tmp_path):
+    new = tmp_path / "show-2027"
+    switch_folder(app, new, "Create folder and switch")
+    assert new.is_dir()
+    assert any("Created a new folder" in s.value for s in app.success)
+    assert app.text_input(key="location_input").value == str(new)
+
+
+def test_switch_to_existing_show(app, tmp_path):
+    other = tmp_path / "other"
+    switch_folder(app, other, "Create folder and switch")
+    register(app, "Aunt Dahlia", "1")
+    switch_folder(app, tmp_path, "Switch")  # holds no show files, only the "other" folder
+    switch_folder(app, other, "Switch to this show")
+    assert any("existing show" in s.value for s in app.success)
+    assert app.metric[0].value == "1"
+
+
+def test_cancel_folder_switch(app, tmp_path):
+    switch_folder(app, tmp_path / "nope", "Cancel")
+    assert not (tmp_path / "nope").exists()
+    assert app.text_input(key="location_input").value == str(tmp_path.resolve())
+
+
+def test_judging_hides_names_by_default(app):
+    register(app, "Aunt Dahlia", "1")
+    register(app, "Bob Beetroot", "1")
+    button(app, "Allocate entries and generate slips").click().run()
+    first = widget(app.multiselect, "1st")
+    assert first.options == ["1", "2"]
+    first.set_value([("1", 2)]).run()
+    widget(app.toggle, "Show entrant names").set_value(True).run()
+    first = widget(app.multiselect, "1st")
+    assert first.options == ["1 – Aunt Dahlia", "2 – Bob Beetroot"]
+    assert first.value == [("1", 2)]  # unsaved pick survives the toggle
