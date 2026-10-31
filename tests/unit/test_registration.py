@@ -1,65 +1,46 @@
 import pytest
 
-import pandas as pd
-from pathlib import Path
-from datetime import datetime
-
-from greenbook.cli.main import get_registrar
+from greenbook.cli.main import get_manager, get_registrar
 from greenbook.data.entries import Contestant
-from greenbook.definitions.classes import FLAT_CLASSES
 
 
-class TestRegistrar:
+class TestContestantValidation:
+    @pytest.mark.parametrize(
+        "kwargs, message",
+        [
+            (dict(name="Alice", classes=["1"], paid=0.0), "first and last name"),
+            (dict(name="Alice Appleby", classes=["999"], paid=0.0), "Unknown class '999'"),
+            (dict(name="Alice Appleby", classes=["1", "1", "1"], paid=0.0), "class 1 has 3"),
+            (dict(name="Alice Appleby", classes=["1"], paid=-1.0), "can't be negative"),
+        ],
+    )
+    def test_invalid_contestant_has_readable_error(self, kwargs, message):
+        with pytest.raises(ValueError, match=message):
+            Contestant(**kwargs)
+
+    def test_valid_contestant(self):
+        Contestant(name="Alice Appleby", classes=["1", "1", "25A"], paid=0.5)
+
+
+class TestManager:
     @pytest.fixture
-    def out_dir(
-        self,
-    ):
-        random_dir = Path(f".{hash(datetime.now())}")
-        random_dir.mkdir(exist_ok=True)
-        yield random_dir
-        # remove all files and dir
-        for file in random_dir.iterdir():
-            file.unlink()
-        random_dir.rmdir()
+    def show_dir(self, tmp_path):
+        registrar = get_registrar(tmp_path)
+        registrar.register(Contestant(name="Alice Appleby", classes=["1", "2"], paid=0.0))
+        registrar.register(Contestant(name="Bob Beetroot", classes=["1", "2"], paid=0.0))
+        get_manager(tmp_path).allocate(registrar.contestants())
+        return tmp_path
 
-    @pytest.mark.skip("deprecated method")
-    def test_export(self, out_dir):
-        contestants = [
-            Contestant(name="Alice Appleby", classes=["1", "2", "3"], paid=0.0),
-            Contestant(name="Bob Beetroot", classes=["1", "2", "2", "42"], paid=0.0),
-            Contestant(name="Carole Carrot", classes=["1", "42"], paid=0.0),
-            Contestant(name="Aunt Dahlia", classes=["1", "3", "3"], paid=0.0),
-        ]
-        registrar = get_registrar(out_dir)
-        for contestant in contestants:
-            registrar.register(contestant)
-        csv_loc = out_dir / "contestants.csv"
-        registrar.to_csv(csv_loc)
-        df = pd.read_csv(csv_loc)
-        assert list(df.columns) == ["contestant", *FLAT_CLASSES.keys()]
-        assert len(df) == 4
-        assert df.loc[0, "contestant"] == "Alice Appleby"
-        assert df.loc[0, "1"] == 1
-        assert df.loc[0, "2"] == 1
-        assert df.loc[0, "3"] == 1
-        for col in set(FLAT_CLASSES.keys()) - {"1", "2", "3"}:
-            assert df.loc[0, col] == 0
+    def test_manual_prize_survives_judging(self, show_dir):
+        get_manager(show_dir).add_prize(prize="Wonky Spoon", class_id="1", contestant_id=1)
+        get_manager(show_dir).add_judgment(
+            class_id="2", first=[1], second=[], third=[], commendations=[]
+        )
+        prizes = get_manager(show_dir).report_prizes()
+        assert "Wonky Spoon: Alice Appleby" in prizes
 
-        assert df.loc[1, "contestant"] == "Bob Beetroot"
-        assert df.loc[1, "1"] == 1
-        assert df.loc[1, "2"] == 2
-        assert df.loc[1, "42"] == 1
-        for col in set(FLAT_CLASSES.keys()) - {"1", "2", "42"}:
-            assert df.loc[1, col] == 0
-
-        assert df.loc[2, "contestant"] == "Carole Carrot"
-        assert df.loc[2, "1"] == 1
-        assert df.loc[2, "42"] == 1
-        for col in set(FLAT_CLASSES.keys()) - {"1", "42"}:
-            assert df.loc[2, col] == 0
-
-        assert df.loc[3, "contestant"] == "Aunt Dahlia"
-        assert df.loc[3, "1"] == 1
-        assert df.loc[3, "3"] == 2
-        for col in set(FLAT_CLASSES.keys()) - {"1", "3"}:
-            assert df.loc[3, col] == 0
+    def test_reports_before_any_judging(self, show_dir, tmp_path):
+        manager = get_manager(show_dir)
+        assert manager.report_ranking() == []
+        manager.render_final_report(tmp_path / "render")
+        assert (tmp_path / "render" / "final-prize-report.pdf").exists()

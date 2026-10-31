@@ -35,7 +35,7 @@ def get_contestant_entries(ledger: pd.DataFrame) -> Dict[str, ContestantData]:
 
 def validate_ledger(ledger: pd.DataFrame):
     if (ledger[PAID_COL] < 0).any():
-        ValueError("Can't accept negative payments.")
+        raise ValueError("Can't accept negative payments.")
     contestant_entries = get_contestant_entries(ledger)
     for contestant, entries in contestant_entries.items():
         n_entries_per_class = (entries.entries_df > 0).sum(axis=0)

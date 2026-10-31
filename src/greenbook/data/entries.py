@@ -22,13 +22,19 @@ class Contestant:
     paid: float = attrib(type=float)
 
     def __post_init__(self):
-        n_entries_per_class = Counter(self.classes)
-        assert all(n <= MAX_ENTRIES_PER_CONTESTANT for n in n_entries_per_class.values())
-        assert len(self.name.split()) >= 2
+        if len(self.name.split()) < 2:
+            raise ValueError(f"Name must include a first and last name, got {self.name!r}.")
         for c in self.classes:
             if c not in FLAT_CLASSES:
-                raise ValueError(f"Unknown class {c}")
-        assert self.paid >= 0.0
+                raise ValueError(f"Unknown class {c!r}.")
+        for class_id, n in Counter(self.classes).items():
+            if n > MAX_ENTRIES_PER_CONTESTANT:
+                raise ValueError(
+                    f"At most {MAX_ENTRIES_PER_CONTESTANT} entries per class "
+                    f"(class {class_id} has {n})."
+                )
+        if self.paid < 0.0:
+            raise ValueError("Amount paid can't be negative.")
 
     def unique_id(self) -> str:
         hash_data = self.name + "-".join(str(c) for c in sorted(self.classes))
@@ -59,13 +65,6 @@ class Contestant:
 
     def __le__(self, other):
         return self.name <= other.name
-
-
-@yaml_object(yaml)
-class DeletedContestant(Contestant):
-    def __post_init__(self):
-        super().__post_init__()
-        assert self.name.startswith("DELETED (")
 
 
 @dataclass

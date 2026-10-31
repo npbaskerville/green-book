@@ -164,7 +164,7 @@ class Show:
     def update_class(self, show_class: ShowClass) -> Show:
         classes = {key: value for key, value in self._classes.items() if key != show_class.class_id}
         classes[show_class.class_id] = show_class
-        return Show(list(classes.values()))
+        return Show(list(classes.values()), self._prizes)
 
     def add_prize(self, contestant: Contestant, class_id: str, prize: str) -> Show:
         return Show(self.classes(), [*self._prizes, (contestant, class_id, prize)])

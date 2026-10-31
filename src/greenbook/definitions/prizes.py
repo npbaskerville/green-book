@@ -80,6 +80,8 @@ class MBShield(BasePrize):
 
     def winner(self, show: Show) -> Sequence[Contestant]:
         sorted_contestants = sort_contestant_by_points(show)
+        if not sorted_contestants:
+            return []
         max_score = sorted_contestants[0][1]
         winners = [contestant for contestant, point in sorted_contestants if point == max_score]
         all_scores = [point for _, point in sorted_contestants]

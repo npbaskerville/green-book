@@ -46,9 +46,8 @@ greenbook  --location /Users/nick/green-book-testing-29aug register --name "Baby
 # run this any time to get entry slips
 greenbook  --location /Users/nick/green-book-testing-29aug allocate
 
-# To ammend an entrant:
-greenbook  --location /Users/nick/green-book-testing-29aug  delete --name "Aunt Dahlia"
-greenbook  --location /Users/nick/green-book-testing-29aug register --name "Aunt Dahlia" --entries=35,4,5,39,40,41,42,43,44,45,53,65,65 --paid 0.5
+# To add more entries for an existing entrant, register them again with the same name:
+greenbook  --location /Users/nick/green-book-testing-29aug register --name "Aunt Dahlia" --entries=35,44,65
 greenbook  --location /Users/nick/green-book-testing-29aug allocate
 
 
