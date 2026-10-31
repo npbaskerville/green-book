@@ -23,6 +23,7 @@ from greenbook.cli.main import get_manager, get_registrar
 from greenbook.data.show import Show, ShowClass
 from greenbook.data.entries import Contestant
 from greenbook.definitions.prices import entry_fee
+from greenbook.definitions.prizes import JUDGED_PRIZES
 from greenbook.definitions.classes import FLAT_CLASSES
 
 # Streamlit runs the script off the main thread, where GUI backends (e.g. macOS) crash.
@@ -30,7 +31,12 @@ matplotlib.use("Agg")
 
 PLACES = {"first": "1st", "second": "2nd", "third": "3rd", "commendations": "Commended"}
 BAD_NAME_CHARS = set('\\/:*?"<>|')  # names become PDF filenames, and Windows rejects these
-REPORTS = ["final-class-report.pdf", "final-prize-report.pdf", "final-ranking-report.pdf"]
+REPORTS = {
+    "final-class-report.pdf": "class results",
+    "final-prize-report.pdf": "prize winners",
+    "final-ranking-report.pdf": "points ranking",
+    "final-children-prize-money.pdf": "children's prize money",
+}
 
 
 # region helpers
@@ -89,6 +95,16 @@ def results_by_entry(show: Show) -> dict[tuple[str, int], str]:
                 where = "" if key[0] == show_class.class_id else f" in class {show_class.class_id}"
                 results[key] = PLACES[place] + where
     return results
+
+
+def judged_prize_awards(show: Show) -> dict[str, tuple[str, int]]:
+    """Map each judged prize already awarded to its (class, entry number)."""
+    awards = {}
+    for contestant, class_id, prize in show.prizes:
+        show_class = show.class_lookup(class_id)
+        if prize in JUDGED_PRIZES and show_class and contestant in show_class.contestants:
+            awards[prize] = (class_id, show_class.contestants.index(contestant) + 1)
+    return awards
 
 
 def entry_name(show: Show, key: tuple[str, int]) -> str:
@@ -231,14 +247,18 @@ def judge(location: Path, class_id: str, widget_keys: dict[str, str]) -> str:
     return f"Saved results for class {class_label(class_id)}."
 
 
-def add_prize(location: Path, class_id: str, entry_widget: str) -> str:
-    prize = st.session_state.prize_name.strip()
-    if not prize:
-        raise ValueError("Enter the name of the prize.")
-    number = st.session_state[entry_widget]
-    get_manager(location).add_prize(prize=prize, class_id=class_id, contestant_id=number)
-    st.session_state.prize_name = ""
-    return f"Awarded {prize} to entry {number} in class {class_id}."
+def save_prizes(location: Path, prize_keys: dict[str, tuple[str, str | None]]) -> str:
+    manager = get_manager(location)
+    for prize, (class_key, entry_widget) in prize_keys.items():
+        class_id = st.session_state.get(class_key)
+        if class_id is None:
+            manager.remove_prize(prize)
+        elif entry_widget not in st.session_state:
+            raise ValueError(f"Choose the winning entry for the {prize}.")
+        else:
+            entry = st.session_state[entry_widget]
+            manager.add_prize(prize=prize, class_id=class_id, contestant_id=entry)
+    return "Saved special prizes."
 
 
 def final_report(location: Path) -> str:
@@ -493,37 +513,45 @@ with tab_judging:
         flash("judging")
 
         st.subheader("Special prizes")
-        st.caption("Prizes outside the standard trophies, e.g. the Wonky Wooden Spoon.")
-        col_class, col_entry, col_prize = st.columns([3, 2, 3])
-        prize_class = col_class.selectbox(
-            "Class",
-            show_classes,
-            format_func=lambda sc: class_label(sc.class_id),
-            key="prize_class",
-        )
-        entry_widget = f"prize_entry-{prize_class.class_id}"
-        col_entry.selectbox(
-            "Entry",
-            range(1, len(prize_class) + 1),
-            format_func=lambda n: f"{n} – {prize_class.entry_lookup(n).name}"
-            if show_names
-            else str(n),
-            key=entry_widget,
-        )
-        col_prize.text_input("Prize", key="prize_name")
+        st.caption("Prizes chosen by the judges. Choose the winning entry for each, then save.")
+        awards = judged_prize_awards(show)
+        class_ids = [None] + [sc.class_id for sc in show_classes]
+        prize_keys = {}
+        for prize in JUDGED_PRIZES:
+            col_prize, col_class, col_entry = st.columns([2, 3, 2], vertical_alignment="center")
+            col_prize.markdown(f"**{prize}**")
+            awarded_class, awarded_entry = awards.get(prize, (None, 1))
+            class_key = f"prize-class-{prize}-{version}"
+            chosen = col_class.selectbox(
+                f"Class for the {prize}",
+                class_ids,
+                index=class_ids.index(awarded_class),
+                format_func=lambda c: "Not awarded" if c is None else class_label(c),
+                key=class_key,
+                label_visibility="collapsed",
+            )
+            entry_widget = None
+            if chosen:
+                prize_class = show.class_lookup(chosen)
+                entry_widget = f"prize-entry-{prize}-{chosen}-{version}"
+                col_entry.selectbox(
+                    f"Entry for the {prize}",
+                    range(1, len(prize_class) + 1),
+                    index=awarded_entry - 1 if chosen == awarded_class else 0,
+                    format_func=lambda n, sc=prize_class: f"Entry {n} – {sc.entry_lookup(n).name}"
+                    if show_names
+                    else f"Entry {n}",
+                    key=entry_widget,
+                    label_visibility="collapsed",
+                )
+            prize_keys[prize] = (class_key, entry_widget)
         st.button(
-            "Award prize",
+            "Save special prizes",
+            type="primary",
             on_click=act,
-            args=("prize", location, add_prize, prize_class.class_id, entry_widget),
+            args=("prize", location, save_prizes, prize_keys),
         )
         flash("prize")
-        if show.prizes:
-            awarded = [
-                {"Prize": prize, "Class": class_label(class_id)}
-                | ({"Winner": contestant.name} if show_names else {})
-                for contestant, class_id, prize in show.prizes
-            ]
-            st.dataframe(pd.DataFrame(awarded), hide_index=True)
 # endregion
 
 # region results
@@ -537,11 +565,20 @@ with tab_results:
         with col_prizes:
             st.subheader("Prizes")
             prize_rows = [line.split(": ", 1) for line in manager.report_prizes()]
-            st.dataframe(pd.DataFrame(prize_rows, columns=["Prize", "Winner"]), hide_index=True)
+            st.dataframe(
+                pd.DataFrame(prize_rows, columns=["Prize", "Winner"]),
+                hide_index=True,
+                height=35 * (len(prize_rows) + 1) + 3,  # show every prize without scrolling
+            )
         with col_ranking:
             st.subheader("Points ranking")
             ranking = [(c.name, points) for c, points in manager.report_ranking()]
             st.dataframe(pd.DataFrame(ranking, columns=["Name", "Points"]), hide_index=True)
+
+        children = [(c.name, money(amount)) for c, amount in manager.children_prize_money()]
+        if children:
+            st.subheader("Children's prize money")
+            st.dataframe(pd.DataFrame(children, columns=["Name", "Prize money"]), hide_index=True)
 
         st.subheader("Class results")
         result_class = st.selectbox(
@@ -559,8 +596,17 @@ with tab_results:
             args=("report", location, final_report),
         )
         flash("report")
-        for report in REPORTS:
-            pdf_buttons(report, render_dir / report, key=report)
+        for report, label in REPORTS.items():
+            pdf_buttons(label, render_dir / report, key=report)
+
+        st.subheader("Class winners")
+        st.download_button(
+            "Download class winners (CSV)",
+            # The byte-order mark makes Excel read characters like ” correctly.
+            "\ufeff" + manager.class_winners().to_csv(index=False),
+            "class-winners.csv",
+            on_click="ignore",
+        )
 # endregion
 
 # region lookup

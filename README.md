@@ -51,10 +51,14 @@ Work through the tabs in order:
 3. **Judging**: on the day, choose a class and pick the 1st, 2nd, 3rd and commended entries.
    Only entry numbers are shown unless you turn on *Show entrant names*.
    Turn on *Include entries from other classes* to award a place to an entry from another
-   class. Special prizes, such as the Wonky Wooden Spoon, are awarded at the bottom.
-4. **Results**: trophy winners, the points ranking and each class's results. *Generate results
-   PDFs* makes the final reports. *Open* shows a PDF in your computer's PDF viewer, ready to
-   print.
+   class. At the bottom, choose the winning entry for each prize the judges award (the Swan
+   Inn Cup, William Jowett Trophy, Gerald Taylor Cup, George Wilson Revill Cup and Betty
+   Hughes Cup). The other trophies are worked out from the points.
+4. **Results**: trophy winners, the points ranking, children's prize money and each class's
+   results. *Generate results PDFs* makes the final reports: class results, prize winners,
+   points ranking and children's prize money (30p for 1st, 20p for 2nd and 10p for 3rd, in
+   any class). *Open* shows a PDF in your computer's PDF viewer, ready to print. You can also
+   download each class's winner as a CSV file.
 5. **Lookup**: find who an entry belongs to, what a person entered, and entry counts per class.
 
 Before every change, a copy of the show's files is saved under `backups/` in the data folder.

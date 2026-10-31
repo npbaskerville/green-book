@@ -9,10 +9,15 @@ from ruamel.yaml import YAML
 from greenbook.data.show import Show, Entry, ShowClass
 from greenbook.data.entries import Contestant, AllocatedContestant
 from greenbook.render.labels import render_contestant_to_file
-from greenbook.render.results import render_prizes, render_ranking, render_class_results
-from greenbook.definitions.prices import entry_fee
+from greenbook.render.results import (
+    render_prizes,
+    render_ranking,
+    render_class_results,
+    render_children_prize_money,
+)
+from greenbook.definitions.prices import CHILDREN_SECTION, CHILD_PRIZE_MONEY, entry_fee
 from greenbook.definitions.prizes import ALL_PRIZES, sort_contestant_by_points
-from greenbook.definitions.classes import FLAT_CLASSES
+from greenbook.definitions.classes import FLAT_CLASSES, CLASS_ID_TO_SECTION
 
 _LOG = logging.getLogger(__name__)
 
@@ -102,6 +107,12 @@ class Manager:
             yaml.dump(self._show, f)
             _LOG.info(f"Added prize {prize} to contestant {contestant_id} in class {class_id}")
 
+    def remove_prize(self, prize: str):
+        self._show = self._show.remove_prize(prize)
+        with self._ledger_loc.open("w") as f:
+            yaml.dump(self._show, f)
+            _LOG.info(f"Removed prize {prize}")
+
     def lookup_contestant(self, class_id: str, contestant_id: int) -> Contestant:
         return self._show.class_lookup(class_id).entry_lookup(contestant_id)
 
@@ -113,13 +124,43 @@ class Manager:
             winner_str = ", ".join([str(w) for w in sorted(winners)])
             winning_strings.append(f"{prize}: {winner_str}")
             print(f"{prize}: {winner_str}")
+        # Then any other prizes awarded with `manual_prize`.
+        listed = {str(prize) for prize in ALL_PRIZES}
         for prize in self._show.prizes:
             contestant, _, prize_name = prize
+            if prize_name in listed:
+                continue
             winner_str = f"{prize_name}: {contestant.name}"
             winning_strings.append(winner_str)
             print(winner_str)
         _LOG.info("Completed prize report.")
         return winning_strings
+
+    def children_prize_money(self) -> Sequence[Tuple[Contestant, float]]:
+        """
+        Prize money for every child (anyone entered in the children's section), summed over
+        each 1st, 2nd and 3rd place they won in any class.
+        """
+        money: Dict[Contestant, float] = {}
+        for show_class in self._show.classes():
+            if CLASS_ID_TO_SECTION[show_class.class_id] == CHILDREN_SECTION:
+                for contestant in show_class.contestants:
+                    money[contestant] = 0.0
+        for show_class in self._show.classes():
+            for place, amount in CHILD_PRIZE_MONEY.items():
+                for contestant, _ in getattr(show_class, f"{place}_place"):
+                    if contestant in money:
+                        money[contestant] += amount
+        return sorted(money.items(), key=lambda item: item[0].name)
+
+    def class_winners(self) -> pd.DataFrame:
+        """One row per class in the schedule: the class and its 1st place winner(s), if any."""
+        rows = []
+        for class_id, class_name in FLAT_CLASSES.items():
+            show_class = self._show.class_lookup(class_id)
+            winners = [c.name for c, _ in show_class.first_place] if show_class else []
+            rows.append({"class": f"{class_id} - {class_name}", "winner": ", ".join(winners)})
+        return pd.DataFrame(rows)
 
     def to_df(self) -> pd.DataFrame:
         """
@@ -182,10 +223,12 @@ class Manager:
 
     def render_final_report(self, directory: Path):
         """
-        Produce 2 PDFs:
+        Produce 4 PDFs:
             1. A table per class in the show, giving the entry numbers, the names
             of the contestants and their results in the class.
             2. A list of all the prizes and their winners.
+            3. The overall points ranking.
+            4. Children's prize money.
         """
         # 1. Produce a table per class in the show
         class_dfs: List[Tuple[str, str, pd.DataFrame]] = []
@@ -199,3 +242,6 @@ class Manager:
         render_prizes(self.report_prizes(), directory)
         # 3. produce overall points ranking
         render_ranking(self.report_ranking(), directory)
+        # 4. children's prize money
+        money = [(contestant.name, amount) for contestant, amount in self.children_prize_money()]
+        render_children_prize_money(money, directory)

@@ -62,16 +62,28 @@ def test_full_show(app, tmp_path):
     assert [ref for _, ref in show_class.first_place] == [2]
     assert [ref for _, ref in show_class.second_place] == ["2-3"]
 
-    at.text_input(key="prize_name").set_value("Wonky Wooden Spoon")
-    at.run()
-    button(at, "Award prize").click().run()
+    # Special prizes: one row per judged prize. Award the Swan Inn Cup to class 1 entry 1.
+    widget(at.selectbox, "Class for the Swan Inn Cup").set_value("1").run()
+    widget(at.selectbox, "Entry for the Swan Inn Cup").set_value(1).run()
+    button(at, "Save special prizes").click().run()
     assert_ok(at)
+    assert "Swan Inn Cup: Aunt Dahlia" in get_manager(tmp_path).report_prizes()
+    # The saved winner is shown again, and can be removed.
+    assert widget(at.selectbox, "Class for the Swan Inn Cup").value == "1"
+    widget(at.selectbox, "Class for the Swan Inn Cup").select_index(0).run()  # "Not awarded"
+    button(at, "Save special prizes").click().run()
+    assert "Swan Inn Cup: " in get_manager(tmp_path).report_prizes()
 
     button(at, "Generate results PDFs").click().run()
     assert_ok(at)
-    for report in ["final-class-report.pdf", "final-prize-report.pdf", "final-ranking-report.pdf"]:
+    for report in [
+        "final-class-report.pdf",
+        "final-prize-report.pdf",
+        "final-ranking-report.pdf",
+        "final-children-prize-money.pdf",
+    ]:
         assert (tmp_path / "render" / report).exists()
-    assert "Wonky Wooden Spoon: Aunt Dahlia" in get_manager(tmp_path).report_prizes()
+    assert any(b.label == "Download class winners (CSV)" for b in at.get("download_button"))
     assert any((tmp_path / "backups").iterdir())
 
 
