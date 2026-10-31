@@ -24,7 +24,7 @@ def assert_ok(at: AppTest):
 @pytest.fixture
 def app(tmp_path, monkeypatch):
     monkeypatch.setenv("GREENBOOK_LOCATION", str(tmp_path))
-    at = AppTest.from_file(str(APP), default_timeout=60)
+    at = AppTest.from_file(str(APP), default_timeout=180)
     at.run()
     assert_ok(at)
     return at

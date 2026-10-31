@@ -13,7 +13,6 @@ import pandas as pd
 import shutil
 import zipfile
 import streamlit as st
-import matplotlib
 import subprocess
 from pathlib import Path
 from datetime import datetime
@@ -25,9 +24,6 @@ from greenbook.data.entries import Contestant
 from greenbook.definitions.prices import entry_fee
 from greenbook.definitions.prizes import JUDGED_PRIZES
 from greenbook.definitions.classes import FLAT_CLASSES
-
-# Streamlit runs the script off the main thread, where GUI backends (e.g. macOS) crash.
-matplotlib.use("Agg")
 
 PLACES = {"first": "1st", "second": "2nd", "third": "3rd", "commendations": "Commended"}
 BAD_NAME_CHARS = set('\\/:*?"<>|')  # names become PDF filenames, and Windows rejects these
