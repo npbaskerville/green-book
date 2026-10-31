@@ -9,11 +9,11 @@ import io
 import os
 import re
 import sys
+import json
 import pandas as pd
 import shutil
 import zipfile
 import streamlit as st
-import matplotlib
 import subprocess
 from pathlib import Path
 from datetime import datetime
@@ -23,14 +23,18 @@ from greenbook.cli.main import get_manager, get_registrar
 from greenbook.data.show import Show, ShowClass
 from greenbook.data.entries import Contestant
 from greenbook.definitions.prices import entry_fee
+from greenbook.definitions.prizes import JUDGED_PRIZES
 from greenbook.definitions.classes import FLAT_CLASSES
-
-# Streamlit runs the script off the main thread, where GUI backends (e.g. macOS) crash.
-matplotlib.use("Agg")
 
 PLACES = {"first": "1st", "second": "2nd", "third": "3rd", "commendations": "Commended"}
 BAD_NAME_CHARS = set('\\/:*?"<>|')  # names become PDF filenames, and Windows rejects these
-REPORTS = ["final-class-report.pdf", "final-prize-report.pdf", "final-ranking-report.pdf"]
+HIDDEN_FILE = "hidden-entrants.json"  # names hidden from the entrants table; display only
+REPORTS = {
+    "final-class-report.pdf": "class results",
+    "final-prize-report.pdf": "prize winners",
+    "final-ranking-report.pdf": "points ranking",
+    "final-children-prize-money.pdf": "children's prize money",
+}
 
 
 # region helpers
@@ -91,8 +95,25 @@ def results_by_entry(show: Show) -> dict[tuple[str, int], str]:
     return results
 
 
+def judged_prize_awards(show: Show) -> dict[str, tuple[str, int]]:
+    """Map each judged prize already awarded to its (class, entry number)."""
+    awards = {}
+    for contestant, class_id, prize in show.prizes:
+        show_class = show.class_lookup(class_id)
+        if prize in JUDGED_PRIZES and show_class and contestant in show_class.contestants:
+            awards[prize] = (class_id, show_class.contestants.index(contestant) + 1)
+    return awards
+
+
 def entry_name(show: Show, key: tuple[str, int]) -> str:
     return show.class_lookup(key[0]).entry_lookup(key[1]).name
+
+
+def hidden_entrants(location: Path) -> set[str]:
+    try:
+        return set(json.loads((location / HIDDEN_FILE).read_text()))
+    except FileNotFoundError:
+        return set()
 
 
 def backup(location: Path):
@@ -199,16 +220,51 @@ def confirm_folder(path: Path):
 # region changes (each is a button callback that reads its inputs from session state)
 def register(location: Path) -> str:
     ss = st.session_state
-    name = ss.reg_name.strip()
+    registrar = get_registrar(location)
+    name = registrar.canonical_name(ss.reg_name or "")
     check_name(name)
-    existing = {c.contestant.name for c in get_registrar(location).contestants()}
+    existing = {c.contestant.name for c in registrar.contestants()}
     if name in existing and not ss.get("reg_merge"):
         raise ValueError(f"{name} is already registered. Tick the box to add these entries.")
     contestant = Contestant(name=name, classes=parse_classes(ss.reg_classes), paid=ss.reg_paid)
-    get_registrar(location).register(contestant)
-    ss.reg_name, ss.reg_classes, ss.reg_paid = "", "", 0.0
+    registrar.register(contestant)
+    ss.reg_name, ss.reg_classes, ss.reg_paid = None, "", 0.0
     ss.pop("reg_merge", None)
     return f"Registered {len(contestant.classes)} entries for {name}."
+
+
+def set_hidden(location: Path, name: str, hide: bool) -> str:
+    """Hide or unhide a name in the entrants table. Their registration is never changed."""
+    hidden = hidden_entrants(location)
+    if hide:
+        hidden.add(name)
+    else:
+        hidden.discard(name)
+    (location / HIDDEN_FILE).write_text(json.dumps(sorted(hidden), indent=1))
+    if hide:
+        return f"Hid {name} from the table. Their entries are still in the show."
+    return f"{name} is shown in the table again."
+
+
+def ask_to_hide(name: str):
+    st.session_state.pending_hide = name
+
+
+@st.dialog("Hide entrant?", dismissible=False)
+def confirm_hide(location: Path, name: str):
+    st.write(f"Hide **{name}** from the entrants table?")
+    st.caption(
+        "Their entries, entry slips and results stay in the show. You can show them again "
+        "with *Show hidden entrants*."
+    )
+    col_ok, col_cancel = st.columns(2)
+    if col_ok.button("Hide", type="primary"):
+        act("entrants", location, set_hidden, name, True)
+        st.session_state.pop("pending_hide", None)
+        st.rerun()
+    if col_cancel.button("Cancel"):
+        st.session_state.pop("pending_hide", None)
+        st.rerun()
 
 
 def allocate(location: Path) -> str:
@@ -231,14 +287,18 @@ def judge(location: Path, class_id: str, widget_keys: dict[str, str]) -> str:
     return f"Saved results for class {class_label(class_id)}."
 
 
-def add_prize(location: Path, class_id: str, entry_widget: str) -> str:
-    prize = st.session_state.prize_name.strip()
-    if not prize:
-        raise ValueError("Enter the name of the prize.")
-    number = st.session_state[entry_widget]
-    get_manager(location).add_prize(prize=prize, class_id=class_id, contestant_id=number)
-    st.session_state.prize_name = ""
-    return f"Awarded {prize} to entry {number} in class {class_id}."
+def save_prizes(location: Path, prize_keys: dict[str, tuple[str, str | None]]) -> str:
+    manager = get_manager(location)
+    for prize, (class_key, entry_widget) in prize_keys.items():
+        class_id = st.session_state.get(class_key)
+        if class_id is None:
+            manager.remove_prize(prize)
+        elif entry_widget not in st.session_state:
+            raise ValueError(f"Choose the winning entry for the {prize}.")
+        else:
+            entry = st.session_state[entry_widget]
+            manager.add_prize(prize=prize, class_id=class_id, contestant_id=entry)
+    return "Saved special prizes."
 
 
 def final_report(location: Path) -> str:
@@ -282,7 +342,8 @@ if pending := ss.get("pending_location"):
     confirm_folder(pending)
 
 try:
-    contestants = get_registrar(location).contestants()
+    registrar = get_registrar(location)
+    contestants = registrar.contestants()
     manager = get_manager(location)
 except Exception as e:
     st.error(f"Couldn't read the show data in {location}: {e}")
@@ -315,7 +376,17 @@ tab_entries, tab_allocate, tab_judging, tab_results, tab_lookup = st.tabs(
 with tab_entries:
     st.subheader("Register an entrant")
     col_name, col_classes, col_paid = st.columns([2, 3, 1])
-    col_name.text_input("Full name", key="reg_name")
+    names = sorted({c.contestant.name for c in contestants})
+    col_name.selectbox(
+        "Full name",
+        names,
+        index=None,
+        key="reg_name",
+        accept_new_options=True,
+        placeholder="Type a name",
+        help="Start typing to pick someone already registered, or type a new name. "
+        "Capital letters don't matter: bob smith is the same as Bob Smith.",
+    )
     col_classes.text_input(
         "Classes",
         key="reg_classes",
@@ -324,7 +395,8 @@ with tab_entries:
     )
     col_paid.number_input("Paid (£)", key="reg_paid", min_value=0.0, step=0.1, format="%.2f")
 
-    name = st.session_state.reg_name.strip()
+    typed = st.session_state.reg_name or ""
+    name = registrar.canonical_name(typed) if typed.strip() else ""
     classes = parse_classes(st.session_state.reg_classes)
     problem = None
     if name or classes:
@@ -345,13 +417,12 @@ with tab_entries:
             f"due {money(fee - st.session_state.reg_paid)}"
         )
 
-    names = {c.contestant.name for c in contestants}
     is_existing = name in names
     if is_existing:
         st.warning(f"{name} is already registered.")
         st.checkbox(f"Add these entries to {name}'s existing entries", key="reg_merge")
-    elif similar := [n for n in names if n.casefold() == name.casefold()]:
-        st.warning(f"Similar to existing entrant {similar[0]}. Check the spelling.")
+    elif name and name != typed.strip():
+        st.caption(f"Will be saved as **{name}**")
 
     st.button(
         "Register",
@@ -363,22 +434,49 @@ with tab_entries:
     )
     flash("entries")
 
-    st.subheader(f"Registered entrants ({len(contestants)})")
-    if contestants:
-        rows = []
-        for c in sorted(contestants, key=lambda c: c.contestant.name):
-            fee = entry_fee(c.contestant.classes)
-            rows.append(
-                {
-                    "Name": c.contestant.name,
-                    "Classes": ", ".join(sorted(c.contestant.classes, key=class_sort_key)),
-                    "Entries": len(c.contestant.classes),
-                    "Fee": money(fee),
-                    "Paid": money(c.contestant.paid),
-                    "Due": money(fee - c.contestant.paid),
-                }
-            )
-        st.dataframe(pd.DataFrame(rows), hide_index=True)
+    hidden = hidden_entrants(location) & set(names)
+    shown = [c for c in contestants if c.contestant.name not in hidden]
+    st.subheader(f"Registered entrants ({len(shown)})")
+    show_hidden = bool(hidden) and st.toggle(
+        f"Show hidden entrants ({len(hidden)})",
+        key="show_hidden",
+        help="Hiding only removes a name from this table. Their entries stay in the show.",
+    )
+    rows = sorted(contestants if show_hidden else shown, key=lambda c: c.contestant.name)
+    if rows:
+        widths = [3, 5, 1, 1, 1, 1, 1]
+        for col, title in zip(
+            st.columns(widths), ["Name", "Classes", "Entries", "Fee", "Paid", "Due"]
+        ):
+            col.markdown(f"**{title}**")
+        with st.container(height=480 if len(rows) > 10 else "content", border=False):
+            for c in rows:
+                entrant, fee = c.contestant, entry_fee(c.contestant.classes)
+                is_hidden = entrant.name in hidden
+                cols = st.columns(widths, vertical_alignment="center")
+                cols[0].write(f":gray[{entrant.name} (hidden)]" if is_hidden else entrant.name)
+                cols[1].write(", ".join(sorted(entrant.classes, key=class_sort_key)))
+                cols[2].write(str(len(entrant.classes)))
+                cols[3].write(money(fee))
+                cols[4].write(money(entrant.paid))
+                cols[5].write(money(fee - entrant.paid))
+                cols[6].button(
+                    ":green[:material/add_circle:]"
+                    if is_hidden
+                    else ":red[:material/do_not_disturb_on:]",
+                    key=f"hide-{entrant.name}",
+                    help="Show in this table again" if is_hidden else "Hide from this table",
+                    type="tertiary",
+                    # Unhiding is immediate; hiding asks first.
+                    on_click=act if is_hidden else ask_to_hide,
+                    args=("entrants", location, set_hidden, entrant.name, False)
+                    if is_hidden
+                    else (entrant.name,),
+                )
+    flash("entrants")
+    # Kept until the dialog's Hide or Cancel is pressed.
+    if pending_hide := st.session_state.get("pending_hide"):
+        confirm_hide(location, pending_hide)
 # endregion
 
 # region allocation
@@ -493,37 +591,45 @@ with tab_judging:
         flash("judging")
 
         st.subheader("Special prizes")
-        st.caption("Prizes outside the standard trophies, e.g. the Wonky Wooden Spoon.")
-        col_class, col_entry, col_prize = st.columns([3, 2, 3])
-        prize_class = col_class.selectbox(
-            "Class",
-            show_classes,
-            format_func=lambda sc: class_label(sc.class_id),
-            key="prize_class",
-        )
-        entry_widget = f"prize_entry-{prize_class.class_id}"
-        col_entry.selectbox(
-            "Entry",
-            range(1, len(prize_class) + 1),
-            format_func=lambda n: f"{n} – {prize_class.entry_lookup(n).name}"
-            if show_names
-            else str(n),
-            key=entry_widget,
-        )
-        col_prize.text_input("Prize", key="prize_name")
+        st.caption("Prizes chosen by the judges. Choose the winning entry for each, then save.")
+        awards = judged_prize_awards(show)
+        class_ids = [None] + [sc.class_id for sc in show_classes]
+        prize_keys = {}
+        for prize in JUDGED_PRIZES:
+            col_prize, col_class, col_entry = st.columns([2, 3, 2], vertical_alignment="center")
+            col_prize.markdown(f"**{prize}**")
+            awarded_class, awarded_entry = awards.get(prize, (None, 1))
+            class_key = f"prize-class-{prize}-{version}"
+            chosen = col_class.selectbox(
+                f"Class for the {prize}",
+                class_ids,
+                index=class_ids.index(awarded_class),
+                format_func=lambda c: "Not awarded" if c is None else class_label(c),
+                key=class_key,
+                label_visibility="collapsed",
+            )
+            entry_widget = None
+            if chosen:
+                prize_class = show.class_lookup(chosen)
+                entry_widget = f"prize-entry-{prize}-{chosen}-{version}"
+                col_entry.selectbox(
+                    f"Entry for the {prize}",
+                    range(1, len(prize_class) + 1),
+                    index=awarded_entry - 1 if chosen == awarded_class else 0,
+                    format_func=lambda n, sc=prize_class: f"Entry {n} – {sc.entry_lookup(n).name}"
+                    if show_names
+                    else f"Entry {n}",
+                    key=entry_widget,
+                    label_visibility="collapsed",
+                )
+            prize_keys[prize] = (class_key, entry_widget)
         st.button(
-            "Award prize",
+            "Save special prizes",
+            type="primary",
             on_click=act,
-            args=("prize", location, add_prize, prize_class.class_id, entry_widget),
+            args=("prize", location, save_prizes, prize_keys),
         )
         flash("prize")
-        if show.prizes:
-            awarded = [
-                {"Prize": prize, "Class": class_label(class_id)}
-                | ({"Winner": contestant.name} if show_names else {})
-                for contestant, class_id, prize in show.prizes
-            ]
-            st.dataframe(pd.DataFrame(awarded), hide_index=True)
 # endregion
 
 # region results
@@ -537,11 +643,20 @@ with tab_results:
         with col_prizes:
             st.subheader("Prizes")
             prize_rows = [line.split(": ", 1) for line in manager.report_prizes()]
-            st.dataframe(pd.DataFrame(prize_rows, columns=["Prize", "Winner"]), hide_index=True)
+            st.dataframe(
+                pd.DataFrame(prize_rows, columns=["Prize", "Winner"]),
+                hide_index=True,
+                height=35 * (len(prize_rows) + 1) + 3,  # show every prize without scrolling
+            )
         with col_ranking:
             st.subheader("Points ranking")
             ranking = [(c.name, points) for c, points in manager.report_ranking()]
             st.dataframe(pd.DataFrame(ranking, columns=["Name", "Points"]), hide_index=True)
+
+        children = [(c.name, money(amount)) for c, amount in manager.children_prize_money()]
+        if children:
+            st.subheader("Children's prize money")
+            st.dataframe(pd.DataFrame(children, columns=["Name", "Prize money"]), hide_index=True)
 
         st.subheader("Class results")
         result_class = st.selectbox(
@@ -559,8 +674,17 @@ with tab_results:
             args=("report", location, final_report),
         )
         flash("report")
-        for report in REPORTS:
-            pdf_buttons(report, render_dir / report, key=report)
+        for report, label in REPORTS.items():
+            pdf_buttons(label, render_dir / report, key=report)
+
+        st.subheader("Class winners")
+        st.download_button(
+            "Download class winners (CSV)",
+            # The byte-order mark makes Excel read characters like ” correctly.
+            "\ufeff" + manager.class_winners().to_csv(index=False),
+            "class-winners.csv",
+            on_click="ignore",
+        )
 # endregion
 
 # region lookup
