@@ -3,7 +3,6 @@ import pytest
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from datetime import datetime
 from collections import defaultdict
 
 from greenbook.cli.main import get_manager, get_registrar
@@ -14,21 +13,9 @@ from greenbook.definitions.classes import FLAT_CLASSES
 
 class TestEndToEndShow:
     @pytest.fixture
-    def out_dir(
-        self,
-    ):
-        random_dir = Path(f".{hash(datetime.now())}")
-        random_dir.mkdir(exist_ok=True)
-        yield random_dir
-        # remove all files and dir
-        for file in random_dir.iterdir():
-            if file.is_file():
-                file.unlink()
-            else:
-                for subfile in file.iterdir():
-                    subfile.unlink()
-                file.rmdir()
-        random_dir.rmdir()
+    def out_dir(self, tmp_path):
+        # A unique folder per test, so tests running in parallel never share one.
+        return tmp_path
 
     def test_basic_winners(self, out_dir):
         contestants = [
