@@ -18,4 +18,9 @@ jobs:
     - name: Install
       run: pip install -e ".[testing]"
     - name: Test with pytest
-      run: pytest tests/
+      shell: bash
+      run: |
+        pytest tests/ -p no:randomly > out.txt 2>&1 || {
+          grep -E "^(E  |FAILED|ERROR)|Error" out.txt | head -40 | sed 's/^/::error::/'
+          exit 1
+        }
