@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import logging
+import dataclasses
 from typing import Dict, List
 from pathlib import Path
 from ruamel.yaml import YAML
@@ -33,9 +34,17 @@ def get_contestant_entries(ledger: pd.DataFrame) -> Dict[str, ContestantData]:
     return grouped_entries
 
 
+def tidy_name(name: str) -> str:
+    """Collapse extra spaces, and capitalise a name typed all in lower or upper case."""
+    name = " ".join(name.split())
+    if name.islower() or name.isupper():
+        name = name.title()
+    return name
+
+
 def validate_ledger(ledger: pd.DataFrame):
     if (ledger[PAID_COL] < 0).any():
-        ValueError("Can't accept negative payments.")
+        raise ValueError("Can't accept negative payments.")
     contestant_entries = get_contestant_entries(ledger)
     for contestant, entries in contestant_entries.items():
         n_entries_per_class = (entries.entries_df > 0).sum(axis=0)
@@ -60,7 +69,19 @@ class Registrar:
             _LOG.info(f"loaded {len(self._ledger)} rows from {self._ledger_loc}")
             validate_ledger(self._ledger)
 
+    def canonical_name(self, name: str) -> str:
+        """
+        The registered spelling of `name`, ignoring case and extra spaces (so "bob  SMITH" is
+        "Bob Smith"), or the tidied name if nobody by that name is registered yet.
+        """
+        name = tidy_name(name)
+        for existing in self._ledger[LEDGER_NAME_COL].unique():
+            if str(existing).casefold() == name.casefold():
+                return str(existing)
+        return name
+
     def register(self, contestant: Contestant):
+        contestant = dataclasses.replace(contestant, name=self.canonical_name(contestant.name))
         entry_data = np.full((len(contestant.classes), len(CLASS_IDS)), fill_value=np.nan)
         for idx, _class in enumerate(contestant.classes):
             entry_data[idx, CLASS_IDS.index(_class)] = 1

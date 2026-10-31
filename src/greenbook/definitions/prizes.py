@@ -19,6 +19,13 @@ class BasePrize(ABC):
         return self._name
 
 
+class JudgedPrize(BasePrize):
+    """A prize the judges choose, recorded with `Manager.add_prize`."""
+
+    def winner(self, show: Show) -> Sequence[Contestant]:
+        return [contestant for contestant, _, prize in show.prizes if prize == self._name]
+
+
 class HighestPointsInClasses(BasePrize):
     def __init__(self, name: str, class_ids: Sequence[str]):
         self._class_ids = class_ids
@@ -80,6 +87,8 @@ class MBShield(BasePrize):
 
     def winner(self, show: Show) -> Sequence[Contestant]:
         sorted_contestants = sort_contestant_by_points(show)
+        if not sorted_contestants:
+            return []
         max_score = sorted_contestants[0][1]
         winners = [contestant for contestant, point in sorted_contestants if point == max_score]
         all_scores = [point for _, point in sorted_contestants]
@@ -119,13 +128,21 @@ class ChildrensCup(HighestPointInSection):
         )
 
 
+# In the order they appear in the prize report.
 ALL_PRIZES = [
-    WilliamTrowPooleTrophy(),
-    JoanHollierPlate(),
     MBShield(),
+    HaroldHerbertCup(),
+    JudgedPrize("Swan Inn Cup"),
+    JudgedPrize("William Jowett Trophy"),
     MrsAnnPorterCup(),
+    JudgedPrize("Gerald Taylor Cup"),
     ButlerTrophy(),
     CourtHouseSalver(),
     ChildrensCup(),
+    JudgedPrize("George Wilson Revill Cup"),
+    JudgedPrize("Betty Hughes Cup"),
+    WilliamTrowPooleTrophy(),
+    JoanHollierPlate(),
 ]
+JUDGED_PRIZES = [str(prize) for prize in ALL_PRIZES if isinstance(prize, JudgedPrize)]
 # endregion

@@ -164,10 +164,16 @@ class Show:
     def update_class(self, show_class: ShowClass) -> Show:
         classes = {key: value for key, value in self._classes.items() if key != show_class.class_id}
         classes[show_class.class_id] = show_class
-        return Show(list(classes.values()))
+        return Show(list(classes.values()), self._prizes)
 
     def add_prize(self, contestant: Contestant, class_id: str, prize: str) -> Show:
-        return Show(self.classes(), [*self._prizes, (contestant, class_id, prize)])
+        """Award a prize, replacing any previous winner of the same prize."""
+        return Show(
+            self.classes(), [*self.remove_prize(prize).prizes, (contestant, class_id, prize)]
+        )
+
+    def remove_prize(self, prize: str) -> Show:
+        return Show(self.classes(), [p for p in self._prizes if p[2] != prize])
 
     def contestant_entries(
         self,
