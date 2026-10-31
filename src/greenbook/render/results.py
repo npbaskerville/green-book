@@ -25,9 +25,10 @@ def render_prizes(prize_results: Sequence[str], directory: Path):
     directory.mkdir(parents=True, exist_ok=True)
     file_loc = directory / "final-prize-report.pdf"
     fig, ax = plt.subplots()
+    ax.axis("off")
+    step = 0.9 / max(len(prize_results), 9)  # fit every prize on the page
     for idx, prize in enumerate(prize_results):
-        ax.axis("off")
-        ax.text(0.5, 0.9 - idx * 0.1, prize, ha="center", va="top", size=10)
+        ax.text(0.5, 0.9 - idx * step, prize, ha="center", va="top", size=10)
     ax.set_title("Prize Winners")
     fig.savefig(file_loc)
     plt.close(fig)
@@ -50,3 +51,24 @@ def render_ranking(ranking: Sequence[Tuple[Contestant, int]], directory: Path):
     ax.set_title("Ranking")
     fig.savefig(file_loc)
     plt.close(fig)
+
+
+def render_children_prize_money(money: Sequence[Tuple[str, float]], directory: Path):
+    directory.mkdir(parents=True, exist_ok=True)
+    file_loc = directory / "final-children-prize-money.pdf"
+    rows = [[name, f"£{amount:.2f}"] for name, amount in money]
+    rows.append(["Total", f"£{sum(amount for _, amount in money):.2f}"])
+    per_page = 35
+    with PdfPages(file_loc) as pp:
+        for start in range(0, len(rows), per_page):
+            fig, ax = plt.subplots(figsize=(8.27, 11.69))
+            ax.axis("off")
+            end = start + per_page
+            page = rows[start:end]
+            table = ax.table(cellText=page, colLabels=["Name", "Prize money"], loc="upper center")
+            table.auto_set_font_size(False)
+            table.set_fontsize(12)
+            table.scale(1, 1.8)
+            ax.set_title("Children's prize money")
+            pp.savefig(fig)
+            plt.close(fig)
