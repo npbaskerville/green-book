@@ -209,3 +209,22 @@ def test_hide_entrant_from_table_only(app, tmp_path):
     assert ":gray[Bob Beetroot (hidden)]" in [m.value for m in app.markdown]
     app.button(key="hide-Bob Beetroot").click().run()
     assert not any(t.label.startswith("Show hidden") for t in app.toggle)
+
+
+def test_hosted_demo(monkeypatch, tmp_path):
+    # The demo entry point sets GREENBOOK_DEMO; monkeypatch puts it back afterwards.
+    monkeypatch.setenv("GREENBOOK_DEMO", "1")
+    monkeypatch.setenv("TMPDIR", str(tmp_path))
+    at = AppTest.from_file(str(Path(__file__).parents[2] / "streamlit_app.py"), default_timeout=180)
+    at.run()
+    assert_ok(at)
+    assert not [t for t in at.text_input if t.key == "location_input"]  # no folder picker
+    location = Path(at.session_state["location"])
+    assert location.name.startswith("greenbook-demo-")
+
+    button(at, "Load example entrants").click().run()
+    assert_ok(at)
+    assert len(get_registrar(location).contestants()) == 7
+    button(at, "Allocate entries and generate slips").click().run()
+    assert_ok(at)
+    assert not [b for b in at.button if b.label.startswith("Open")]  # download only

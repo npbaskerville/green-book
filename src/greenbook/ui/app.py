@@ -19,6 +19,7 @@ from pathlib import Path
 from datetime import datetime
 from collections import Counter
 
+from greenbook.ui import demo
 from greenbook.cli.main import get_manager, get_registrar
 from greenbook.data.show import Show, ShowClass
 from greenbook.data.entries import Contestant
@@ -29,6 +30,7 @@ from greenbook.definitions.classes import FLAT_CLASSES
 PLACES = {"first": "1st", "second": "2nd", "third": "3rd", "commendations": "Commended"}
 BAD_NAME_CHARS = set('\\/:*?"<>|')  # names become PDF filenames, and Windows rejects these
 HIDDEN_FILE = "hidden-entrants.json"  # names hidden from the entrants table; display only
+DEMO = demo.enabled()
 REPORTS = {
     "final-class-report.pdf": "class results",
     "final-prize-report.pdf": "prize winners",
@@ -159,6 +161,11 @@ def pdf_buttons(label: str, path: Path, key: str):
     """Open and Download buttons for a PDF, if it exists."""
     if path.exists():
         col_open, col_download, _ = st.columns([2, 2, 5])
+        if DEMO:  # Open would open the file on the server, not the visitor's computer
+            st.download_button(
+                f"Download {label}", path.read_bytes(), file_name=path.name, key=f"dl-{key}"
+            )
+            return
         col_open.button(
             f"Open {label}", key=f"open-{key}", on_click=open_file, args=(path, key), type="primary"
         )
@@ -312,7 +319,9 @@ def final_report(location: Path) -> str:
 st.set_page_config(page_title="Greenbook", page_icon="🥕", layout="wide")
 
 ss = st.session_state
-if "location" not in ss:
+if "location" not in ss and DEMO:
+    ss.location = str(demo.new_folder())
+elif "location" not in ss:
     default = os.getenv("GREENBOOK_LOCATION", "~/greenbook-data")
     ss.location = str(Path(default).expanduser().resolve())
 if "location_input" not in ss or ss.pop("reset_location_input", False):
@@ -328,15 +337,21 @@ def location_changed():
 
 with st.sidebar:
     st.title("🥕 Greenbook")
-    st.text_input(
-        "Data folder",
-        key="location_input",
-        on_change=location_changed,
-        help="Where this show's files are kept. Use a new folder for each year's show. "
-        "Type a folder and press Enter to switch.",
-    )
-    flash("folder")
-    st.caption(f"✅ Using `{location}`")
+    if DEMO:
+        st.info(
+            "**Demo.** Try anything: your show is temporary, private to you, and cleared when "
+            "you refresh the page."
+        )
+    else:
+        st.text_input(
+            "Data folder",
+            key="location_input",
+            on_change=location_changed,
+            help="Where this show's files are kept. Use a new folder for each year's show. "
+            "Type a folder and press Enter to switch.",
+        )
+        flash("folder")
+        st.caption(f"✅ Using `{location}`")
 # Kept until the dialog's Switch or Cancel is pressed (the dialog can't be dismissed otherwise).
 if pending := ss.get("pending_location"):
     confirm_folder(pending)
@@ -367,6 +382,14 @@ with st.sidebar:
         st.success("Allocation up to date")
     if show_classes:
         st.progress(len(judged) / len(show_classes), f"{len(judged)}/{len(show_classes)} judged")
+    if DEMO and not contestants:
+        st.button(
+            "Load example entrants",
+            on_click=act,
+            args=("demo", location, demo.load_example),
+            help="Fills in a few entrants so you can try allocation, judging and results.",
+        )
+    flash("demo")
 
 tab_entries, tab_allocate, tab_judging, tab_results, tab_lookup = st.tabs(
     ["Entries", "Allocation & slips", "Judging", "Results", "Lookup"]
@@ -509,7 +532,8 @@ with tab_allocate:
         st.download_button("Download all slips (ZIP)", zipped.getvalue(), "entry-slips.zip")
         slip = st.selectbox("Entrant", slips, format_func=lambda p: p.stem, key="slip_entrant")
         pdf_buttons(f"slip for {slip.stem}", slip, key="slip")
-        st.caption(f"Slips are also saved in `{render_dir}`")
+        if not DEMO:
+            st.caption(f"Slips are also saved in `{render_dir}`")
 # endregion
 
 # region judging
