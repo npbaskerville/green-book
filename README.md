@@ -92,6 +92,15 @@ entry from another class, write it as `CLASS:ENTRY`, e.g. `--third=25A:1`.
 greenbook judge --class 42 --first=31 --second=14,27 --commendations=50
 ```
 
+## Hosted demo
+
+`streamlit_app.py` runs the web app in demo mode for
+[Streamlit Community Cloud](https://share.streamlit.io): every visitor gets their own temporary,
+empty show (with a button to load example entrants), and refreshing the page starts again.
+To deploy it, sign in at share.streamlit.io with GitHub, choose **Create app**, pick this
+repository, branch `master` and main file `streamlit_app.py`, set Python to 3.12 under
+**Advanced settings**, and press **Deploy**.
+
 ## Development
 
 ```bash
