@@ -3,6 +3,11 @@
 Greenbook handles a village show from start to finish: registering entrants, numbering their
 entries and printing entry slips, recording the judging, and producing the results PDFs.
 
+
+Demo app is available here: https://birlingham-green-book.streamlit.app
+
+**For actual use, run locally.** The demo will not persist anything and no guarantees are made about the security of data entered into it. Assume anything entered is public. 
+
 ## Installation
 
 Greenbook runs on Windows, macOS and Linux. Installation uses [uv](https://docs.astral.sh/uv/),
